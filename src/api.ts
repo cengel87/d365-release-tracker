@@ -56,5 +56,6 @@ export const api = {
     j(`/.netlify/functions/changes?days=${days}`),
 
   refreshChangesNow: async (): Promise<{ total: number; newCount: number; changedCount: number }> =>
-    j('/.netlify/functions/refresh', { method: 'POST' }),
+    j('/.netlify/functions/refresh', { method: 'POST', body: JSON.stringify({}) }),
+
 }
