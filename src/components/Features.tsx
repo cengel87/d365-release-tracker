@@ -170,7 +170,7 @@ export function Features(props: {
                     <td title={watched ? 'In watchlist' : ''}>{watched ? '👁️' : ''}</td>
                     <td title={`${f.status}`}>{statusEmoji(f.status)}</td>
                     <td title={String(f['Product name'] ?? '')}>{f['Product name']}</td>
-                    <td title={String(f['Feature name'] ?? '')}><b>{f['Feature name']}</b></td>
+                    <td title={String(f['Feature name'] ?? '')}>{f['Feature name']}</td>
                     <td title={String(f.releaseWave ?? 'TBD')}>{f.releaseWave ?? 'TBD'}</td>
                     <td title={fmtDate(f.gaDate)}>{fmtDate(f.gaDate)}</td>
                     <td title={String(f['Enabled for'] ?? '')}>{String(f['Enabled for'] ?? '')}</td>
