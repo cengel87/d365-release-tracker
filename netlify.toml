@@ -4,11 +4,6 @@
 
 [functions]
   directory = "netlify/functions"
-  node_version = "18"  # Ensures built-in fetch and compatibility
-
-# Optional: Set timeout for functions (max 10s for sync)
-# [functions."*"]
-#   timeout = 10
 
 # SPA fallback
 [[redirects]]
