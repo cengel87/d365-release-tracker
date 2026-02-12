@@ -85,21 +85,41 @@ export function Features(props: {
               {enablements.map(x => <option key={x} value={x}>{x}</option>)}
             </select>
 
-            {/* GA date range (if you already added these to filters + applyFilters) */}
-            <input
-              className="input"
-              type="date"
-              value={filters.gaStart ? new Date(filters.gaStart).toISOString().slice(0, 10) : ''}
-              onChange={(e) => setFilters({ ...filters, gaStart: e.target.value ? new Date(e.target.value + 'T00:00:00') : null })}
-              title="GA start date"
-            />
-            <input
-              className="input"
-              type="date"
-              value={filters.gaEnd ? new Date(filters.gaEnd).toISOString().slice(0, 10) : ''}
-              onChange={(e) => setFilters({ ...filters, gaEnd: e.target.value ? new Date(e.target.value + 'T00:00:00') : null })}
-              title="GA end date"
-            />
+            {/* GA date range */}
+            <div className="flex flex-col gap-2">
+              <label className="text-sm font-medium"><code>   GA Date Range:   </code></label>
+
+              <input
+                className="input"
+                type="date"
+                value={filters.gaStart ? new Date(filters.gaStart).toISOString().slice(0, 10) : ''}
+                onChange={(e) =>
+                  setFilters({
+                    ...filters,
+                    gaStart: e.target.value
+                      ? new Date(e.target.value + 'T00:00:00')
+                      : null,
+                  })
+                }
+                title="GA start date"
+              />
+
+              <input
+                className="input"
+                type="date"
+                value={filters.gaEnd ? new Date(filters.gaEnd).toISOString().slice(0, 10) : ''}
+                onChange={(e) =>
+                  setFilters({
+                    ...filters,
+                    gaEnd: e.target.value
+                      ? new Date(e.target.value + 'T00:00:00')
+                      : null,
+                  })
+                }
+                title="GA end date"
+              />
+            </div>
+
           </div>
 
           <div className="row">
@@ -148,7 +168,7 @@ export function Features(props: {
                     style={{ cursor: 'pointer' }}
                   >
                     <td title={watched ? 'In watchlist' : ''}>{watched ? '👁️' : ''}</td>
-                    <td title={`${f.status}`}>{statusEmoji(f.status)} {f.status}</td>
+                    <td title={`${f.status}`}>{statusEmoji(f.status)}</td>
                     <td title={String(f['Product name'] ?? '')}>{f['Product name']}</td>
                     <td title={String(f['Feature name'] ?? '')}><b>{f['Feature name']}</b></td>
                     <td title={String(f.releaseWave ?? 'TBD')}>{f.releaseWave ?? 'TBD'}</td>
