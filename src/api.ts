@@ -1,19 +1,35 @@
 import type { ChangeLogItem, Note, ReleaseFeature, WatchlistItem } from './types'
 
-async function j<T>(url: string, init?: RequestInit): Promise<T> {
+export async function j<T>(url: string, init: RequestInit = {}): Promise<T> {
   const res = await fetch(url, {
+    // IMPORTANT: spread init AFTER defaults? No — we want init to win for method, body, etc.
+    // But we also want to merge headers safely.
     ...init,
     headers: {
-      'content-type': 'application/json',
-      ...(init?.headers || {}),
+      "Content-Type": "application/json",
+      ...(init.headers || {}),
     },
-  })
-  if (!res.ok) {
-    const txt = await res.text().catch(() => '')
-    throw new Error(`Request failed (${res.status}): ${txt || res.statusText}`)
+  });
+
+  const text = await res.text();
+  let data: any = null;
+
+  try {
+    data = text ? JSON.parse(text) : null;
+  } catch {
+    data = text;
   }
-  return res.json() as Promise<T>
+
+  if (!res.ok) {
+    const msg =
+      (data && typeof data === "object" && (data.error || data.message)) ||
+      `Request failed: ${res.status}`;
+    throw new Error(`${msg}${data?.detail ? ` — ${data.detail}` : ""}`);
+  }
+
+  return data as T;
 }
+
 
 export const api = {
   fetchReleasePlans: async (): Promise<{ fetchedAt: string; results: ReleaseFeature[]; sourceUrl: string }> =>
