@@ -13,11 +13,17 @@ const TRACKED_FIELDS = [
 ]
 
 async function isFirstSync(sb) {
-  const { count, error } = await sb
-    .from('feature_snapshots')
-    .select('id', { count: 'exact', head: true });
-  if (error) throw error;
-  return (count ?? 0) === 0;
+  console.log('Checking if first sync...');
+  try {
+    const { count, error } = await sb
+      .from('feature_snapshots')
+      .select('id', { count: 'exact', head: true });
+    if (error) throw error;
+    return (count ?? 0) === 0;
+  } catch (e) {
+    console.error('Error in isFirstSync:', e);
+    throw e;
+  }
 }
 
 function classify(field) {
@@ -39,6 +45,7 @@ exports.handler = async (event) => {
     const firstSync = await isFirstSync(sb);
     console.log('First sync check:', firstSync);
 
+    console.log('Fetching release plans...');
     const payload = await fetchAllReleasePlans();
     const features = payload.results;
     console.log(`Fetched ${features.length} features`);
@@ -57,10 +64,18 @@ exports.handler = async (event) => {
         })
         .filter(Boolean);
 
+      console.log(`Preparing to insert ${newSnapshots.length} snapshots in batches of ${batchSize}`);
+
       for (let i = 0; i < newSnapshots.length; i += batchSize) {
         const batch = newSnapshots.slice(i, i + batchSize);
-        const { error } = await sb.from('feature_snapshots').insert(batch);
-        if (error) throw error;
+        console.log(`Inserting batch ${i / batchSize + 1} with ${batch.length} rows...`);
+        try {
+          const { error } = await sb.from('feature_snapshots').insert(batch);
+          if (error) throw error;
+        } catch (e) {
+          console.error('Error inserting snapshot batch:', e);
+          throw e;
+        }
       }
 
       console.log('Baseline snapshots inserted');
@@ -75,12 +90,20 @@ exports.handler = async (event) => {
 
     // Normal mode: bulk fetch latest snapshots
     const allRpids = features.map((f) => String(f?.['Release Plan ID'] || '').trim()).filter(Boolean);
-    const { data: allSnapshots, error: snapErr } = await sb
-      .from('feature_snapshots')
-      .select('release_plan_id, snapshot_data')
-      .in('release_plan_id', allRpids)
-      .order('fetched_at', { ascending: false });
-    if (snapErr) throw snapErr;
+    console.log(`Fetching snapshots for ${allRpids.length} RPIDs...`);
+    let allSnapshots;
+    try {
+      const { data, error } = await sb
+        .from('feature_snapshots')
+        .select('release_plan_id, snapshot_data')
+        .in('release_plan_id', allRpids)
+        .order('fetched_at', { ascending: false });
+      if (error) throw error;
+      allSnapshots = data;
+    } catch (e) {
+      console.error('Error fetching snapshots:', e);
+      throw e;
+    }
 
     const snapshotMap = new Map();
     allSnapshots.forEach((s) => {
@@ -91,6 +114,7 @@ exports.handler = async (event) => {
     const newSnapshots = [];
     const changeLogs = [];
 
+    console.log('Processing features...');
     for (const f of features) {
       const rpid = String(f?.['Release Plan ID'] || '').trim();
       if (!rpid) continue;
@@ -138,23 +162,37 @@ exports.handler = async (event) => {
 
     // Batch insert new snapshots and change logs
     const batchSize = 200;
+    console.log(`Inserting ${newSnapshots.length} new snapshots in batches...`);
     for (let i = 0; i < newSnapshots.length; i += batchSize) {
       const batch = newSnapshots.slice(i, i + batchSize);
-      const { error } = await sb.from('feature_snapshots').insert(batch);
-      if (error) throw error;
+      console.log(`Inserting snapshot batch ${i / batchSize + 1} with ${batch.length} rows...`);
+      try {
+        const { error } = await sb.from('feature_snapshots').insert(batch);
+        if (error) throw error;
+      } catch (e) {
+        console.error('Error inserting snapshot batch:', e);
+        throw e;
+      }
     }
 
+    console.log(`Inserting ${changeLogs.length} change logs in batches...`);
     for (let i = 0; i < changeLogs.length; i += batchSize) {
       const batch = changeLogs.slice(i, i + batchSize);
-      const { error } = await sb.from('change_log').insert(batch);
-      if (error) throw error;
+      console.log(`Inserting change log batch ${i / batchSize + 1} with ${batch.length} rows...`);
+      try {
+        const { error } = await sb.from('change_log').insert(batch);
+        if (error) throw error;
+      } catch (e) {
+        console.error('Error inserting change log batch:', e);
+        throw e;
+      }
     }
 
     console.log(`Processed: ${newCount} new, ${changedCount} changed`);
 
     return ok({ total: features.length, newCount, changedCount, baseline: false });
   } catch (e) {
-    console.error('Refresh error:', e);
+    console.error('Full refresh error:', e); // Log full error object
     return bad(500, 'Refresh failed', { detail: String(e?.message || e) });
   }
 }
