@@ -12,15 +12,6 @@ const TRACKED_FIELDS = [
   'Investment area',
 ]
 
-async function isFirstSync(supabaseAdmin) {
-  const { count, error } = await supabaseAdmin
-    .from('feature_snapshots')
-    .select('id', { count: 'exact', head: true })
-
-  if (error) throw error
-  return (count ?? 0) === 0
-}
-
 function classify(field) {
   if (field === 'GA date' || field === 'Public preview date' || field === 'Early access date') return 'date_change'
   if (field === 'GA Release Wave' || field === 'Public Preview Release Wave') return 'wave_change'
@@ -34,112 +25,97 @@ exports.handler = async (event) => {
 
   try {
     const sb = getSupabaseAdmin()
-
-    const firstSync = await isFirstSync(sb)
-
     const payload = await fetchAllReleasePlans()
-    const features = Array.isArray(payload?.results) ? payload.results : []
+    const features = payload.results
 
-    let newCount = 0
-    let changedCount = 0
+    console.log(`Fetched ${features.length} features`); // For logs
 
-    // Baseline mode: store snapshots only; NO change_log rows
-    if (firstSync) {
-      // Insert snapshots in batches to avoid giant single requests
-      const batchSize = 200
-      for (let i = 0; i < features.length; i += batchSize) {
-        const batch = features.slice(i, i + batchSize)
+    const allRpids = features.map(f => String(f['Release Plan ID'] || '').trim()).filter(Boolean);
 
-        const rows = batch
-          .map((f) => {
-            const rpid = String(f?.['Release Plan ID'] || '').trim()
-            if (!rpid) return null
-            return { release_plan_id: rpid, snapshot_data: f }
-          })
-          .filter(Boolean)
+    // Bulk fetch all latest snapshots
+    const { data: allSnapshots, error: snapErr } = await sb
+      .from('feature_snapshots')
+      .select('release_plan_id, snapshot_data')
+      .in('release_plan_id', allRpids)
+      .order('fetched_at', { ascending: false });
+    if (snapErr) throw snapErr;
 
-        if (rows.length) {
-          const { error } = await sb.from('feature_snapshots').insert(rows)
-          if (error) throw error
-        }
-      }
+    // Map for quick lookup (latest per RPID)
+    const snapshotMap = new Map();
+    allSnapshots.forEach(s => {
+      if (!snapshotMap.has(s.release_plan_id)) snapshotMap.set(s.release_plan_id, s.snapshot_data || {});
+    });
 
-      return ok({
-        total: features.length,
-        newCount: 0,
-        changedCount: 0,
-        baseline: true,
-        message: 'Baseline snapshots created. No changes logged on first sync.',
-      })
-    }
+    const newSnapshots = [];
+    const changeLogs = [];
+    let newCount = 0;
+    let changedCount = 0;
 
-    // Normal mode: compare to latest snapshot and log diffs
     for (const f of features) {
-      const rpid = String(f?.['Release Plan ID'] || '').trim()
-      if (!rpid) continue
+      const rpid = String(f['Release Plan ID'] || '').trim()
+      if (!rpid) continue;
 
-      // Latest snapshot
-      const { data: prevRows, error: prevErr } = await sb
-        .from('feature_snapshots')
-        .select('id, snapshot_data, fetched_at')
-        .eq('release_plan_id', rpid)
-        .order('fetched_at', { ascending: false })
-        .limit(1)
+      const prevData = snapshotMap.get(rpid);
+      let changesFound = false;
 
-      if (prevErr) throw prevErr
-      const prev = prevRows && prevRows[0]
-
-      // New feature since we have an existing baseline
-      if (!prev) {
-        await sb.from('feature_snapshots').insert({ release_plan_id: rpid, snapshot_data: f })
-        newCount += 1
-
-        const { error: logErr } = await sb.from('change_log').insert({
+      if (!prevData) {
+        newSnapshots.push({ release_plan_id: rpid, snapshot_data: f });
+        changeLogs.push({
           release_plan_id: rpid,
-          feature_name: String(f?.['Feature name'] || ''),
-          product_name: String(f?.['Product name'] || ''),
+          feature_name: String(f['Feature name'] || ''),
+          product_name: String(f['Product name'] || ''),
           change_type: 'new_feature',
           field_changed: null,
           old_value: null,
           new_value: null,
-        })
-        if (logErr) throw logErr
-
-        continue
+        });
+        newCount += 1;
+        continue;
       }
 
-      const prevData = prev.snapshot_data || {}
-      let changesFound = false
-
       for (const field of TRACKED_FIELDS) {
-        const oldVal = String(prevData?.[field] ?? '').trim()
-        const newVal = String(f?.[field] ?? '').trim()
-
+        const oldVal = String(prevData[field] ?? '').trim();
+        const newVal = String(f[field] ?? '').trim();
         if (oldVal !== newVal) {
-          changesFound = true
-
-          const { error: logErr } = await sb.from('change_log').insert({
+          changesFound = true;
+          changeLogs.push({
             release_plan_id: rpid,
-            feature_name: String(f?.['Feature name'] || ''),
-            product_name: String(f?.['Product name'] || ''),
+            feature_name: String(f['Feature name'] || ''),
+            product_name: String(f['Product name'] || ''),
             change_type: classify(field),
             field_changed: field,
             old_value: oldVal.slice(0, 500),
             new_value: newVal.slice(0, 500),
-          })
-          if (logErr) throw logErr
+          });
         }
       }
 
       if (changesFound) {
-        changedCount += 1
-        const { error: snapErr } = await sb.from('feature_snapshots').insert({ release_plan_id: rpid, snapshot_data: f })
-        if (snapErr) throw snapErr
+        newSnapshots.push({ release_plan_id: rpid, snapshot_data: f });
+        changedCount += 1;
       }
     }
 
-    return ok({ total: features.length, newCount, changedCount, baseline: false })
+    // Batch insert new snapshots
+    const batchSize = 200;
+    for (let i = 0; i < newSnapshots.length; i += batchSize) {
+      const batch = newSnapshots.slice(i, i + batchSize);
+      const { error } = await sb.from('feature_snapshots').insert(batch);
+      if (error) throw error;
+    }
+
+    // Batch insert change logs
+    for (let i = 0; i < changeLogs.length; i += batchSize) {
+      const batch = changeLogs.slice(i, i + batchSize);
+      const { error } = await sb.from('change_log').insert(batch);
+      if (error) throw error;
+    }
+
+    console.log(`Processed: ${newCount} new, ${changedCount} changed`); // For logs
+
+    return ok({ total: features.length, newCount, changedCount })
   } catch (e) {
-    return bad(500, 'Refresh failed', { detail: String(e?.message || e) })
+    console.error(e); // Log full error
+    return bad(500, 'Refresh failed', { detail: String(e.message || e) })
   }
 }
