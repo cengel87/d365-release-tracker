@@ -1,11 +1,15 @@
 :root{
-  --bg:#0b1220;
-  --panel:#111a2c;
-  --panel2:#0f172a;
+  /* Dark, techy, consistent (no gradients) */
+  --bg:#070b14;
+  --panel:#0b1220;
+  --panel2:#0d1628;
   --text:#e5e7eb;
   --muted:#9ca3af;
-  --border:#23304a;
-  --accent:#60a5fa;
+  --border:#1b2a44;
+
+  /* Accent: cool neon-blue */
+  --accent:#38bdf8;
+
   --danger:#ef4444;
   --warn:#f59e0b;
   --ok:#22c55e;
@@ -18,7 +22,7 @@
 
 body{
   margin:0;
-  background: radial-gradient(1200px 800px at 15% 10%, #172554 0%, var(--bg) 50%), var(--bg);
+  background: var(--bg);
   color:var(--text);
 }
 
@@ -54,7 +58,7 @@ a:hover{ text-decoration:underline; }
   padding:3px 8px;
   border:1px solid var(--border);
   border-radius:999px;
-  background:rgba(255,255,255,0.04);
+  background: rgba(255,255,255,0.03);
   color:var(--muted);
 }
 
@@ -69,14 +73,15 @@ a:hover{ text-decoration:underline; }
   padding:8px 10px;
   border:1px solid var(--border);
   border-radius:10px;
-  background:rgba(255,255,255,0.03);
+  background: rgba(255,255,255,0.02);
   color:var(--text);
   cursor:pointer;
 }
 
 .tab.active{
-  border-color: rgba(96,165,250,0.7);
-  background: rgba(96,165,250,0.12);
+  border-color: rgba(56,189,248,0.65);
+  background: rgba(56,189,248,0.10);
+  box-shadow: 0 0 0 1px rgba(56,189,248,0.08) inset;
 }
 
 /* Cards / grids */
@@ -85,10 +90,11 @@ a:hover{ text-decoration:underline; }
 @media (max-width: 980px){ .grid2{ grid-template-columns: 1fr; } }
 
 .card{
-  background: linear-gradient(180deg, rgba(255,255,255,0.03), rgba(255,255,255,0.01));
+  background: var(--panel);
   border:1px solid var(--border);
   border-radius:16px;
   padding:12px;
+  box-shadow: 0 10px 28px rgba(0,0,0,0.25);
 }
 
 .card h3{
@@ -110,7 +116,7 @@ a:hover{ text-decoration:underline; }
   padding:10px;
   border:1px solid var(--border);
   border-radius:14px;
-  background:rgba(0,0,0,0.12);
+  background: rgba(255,255,255,0.02);
 }
 .metric .k{ font-size:11px; color:var(--muted); }
 .metric .v{ font-size:20px; font-weight:700; margin-top:6px; }
@@ -119,7 +125,7 @@ a:hover{ text-decoration:underline; }
 .row{ display:flex; gap:10px; align-items:center; flex-wrap:wrap; }
 
 .input, select, textarea{
-  background: rgba(0,0,0,0.25);
+  background: var(--panel2);
   border:1px solid var(--border);
   color:var(--text);
   border-radius:12px;
@@ -134,9 +140,9 @@ select{
   -moz-appearance:none;
   padding-right:34px;
   background-image:
-    linear-gradient(45deg, transparent 50%, rgba(120, 235, 53, 0.75) 50%),
-    linear-gradient(135deg, rgba(90, 175, 40, 0.75) 50%, transparent 50%),
-    linear-gradient(to right, rgba(35,48,74,0.0), rgba(35,48,74,0.0));
+    linear-gradient(45deg, transparent 50%, rgba(56,189,248,0.85) 50%),
+    linear-gradient(135deg, rgba(56,189,248,0.85) 50%, transparent 50%),
+    linear-gradient(to right, rgba(27,42,68,0.0), rgba(27,42,68,0.0));
   background-position:
     calc(100% - 18px) 50%,
     calc(100% - 12px) 50%,
@@ -153,8 +159,8 @@ option {
 }
 
 .input:focus, select:focus, textarea:focus{
-  border-color: rgba(96,165,250,0.75);
-  box-shadow: 0 0 0 3px rgba(96,165,250,0.14);
+  border-color: rgba(56,189,248,0.75);
+  box-shadow: 0 0 0 3px rgba(56,189,248,0.14);
 }
 
 textarea{ width:100%; min-height:90px; resize:vertical; }
@@ -162,15 +168,17 @@ textarea{ width:100%; min-height:90px; resize:vertical; }
 /* Buttons */
 .btn{
   border:1px solid var(--border);
-  background: rgba(96,165,250,0.14);
+  background: rgba(56,189,248,0.12);
   color:var(--text);
   border-radius:12px;
   padding:9px 12px;
   cursor:pointer;
 }
-.btn:hover{ background: rgba(96,165,250,0.18); }
-.btn.secondary{ background: rgba(255,255,255,0.06); }
+.btn:hover{ background: rgba(56,189,248,0.16); }
+.btn.secondary{ background: rgba(255,255,255,0.05); }
+.btn.secondary:hover{ background: rgba(255,255,255,0.07); }
 .btn.danger{ background: rgba(239,68,68,0.16); }
+.btn.danger:hover{ background: rgba(239,68,68,0.20); }
 .btn.small{ padding:6px 10px; border-radius:10px; font-size:12px; }
 
 /* Filter bar: optional grid helpers (won’t break existing .row usage) */
@@ -240,6 +248,7 @@ textarea{ width:100%; min-height:90px; resize:vertical; }
   overflow:auto;
   border:1px solid var(--border);
   border-radius:16px;
+  background: var(--panel2);
 }
 
 /* Fixed layout + no wrap + ellipsis everywhere (scan-friendly) */
@@ -254,7 +263,7 @@ textarea{ width:100%; min-height:90px; resize:vertical; }
 .table-wrap th,
 .table-wrap td{
   padding:10px 10px;
-  border-bottom:1px solid rgba(35,48,74,0.6);
+  border-bottom:1px solid rgba(27,42,68,0.7);
   vertical-align:middle;
   white-space:nowrap;
   overflow:hidden;
@@ -265,11 +274,12 @@ textarea{ width:100%; min-height:90px; resize:vertical; }
 .table-wrap th{
   position:sticky;
   top:0;
-  background: rgba(15,23,42,0.9);
+  background: rgba(13,22,40,0.95);
   text-align:left;
   font-size:12px;
   color: var(--muted);
   backdrop-filter: blur(6px);
+  border-bottom: 1px solid rgba(27,42,68,0.9);
 }
 
 /* Sorting affordance */
@@ -283,7 +293,7 @@ textarea{ width:100%; min-height:90px; resize:vertical; }
 
 /* Hover + selected rows */
 .table-wrap tr:hover td{ background: rgba(255,255,255,0.03); }
-.table-wrap tr.selected td{ background: rgba(96,165,250,0.10); }
+.table-wrap tr.selected td{ background: rgba(56,189,248,0.10); }
 .table-wrap tr.row-clickable:hover td{ background: rgba(255,255,255,0.04); }
 
 /* Strong feature name */
@@ -337,16 +347,17 @@ textarea{ width:100%; min-height:90px; resize:vertical; }
   border-radius:999px;
   border:1px solid var(--border);
   font-size:12px;
+  background: rgba(255,255,255,0.02);
 }
 
 .pill.ok{ border-color: rgba(34,197,94,0.45); }
 .pill.warn{ border-color: rgba(245,158,11,0.45); }
-.pill.info{ border-color: rgba(96,165,250,0.45); }
+.pill.info{ border-color: rgba(56,189,248,0.45); }
 .pill.muted{ color: var(--muted); }
 
 /* Code / separators */
 pre{
-  background: rgba(0,0,0,0.3);
+  background: rgba(0,0,0,0.35);
   border:1px solid var(--border);
   border-radius:14px;
   padding:10px;
@@ -355,7 +366,7 @@ pre{
 
 hr{
   border:none;
-  border-top:1px solid rgba(35,48,74,0.8);
+  border-top:1px solid rgba(27,42,68,0.9);
   margin:12px 0;
 }
 
@@ -368,7 +379,7 @@ hr{
 .modal-backdrop{
   position:fixed;
   inset:0;
-  background: rgba(0,0,0,0.62);
+  background: rgba(0,0,0,0.70);
   backdrop-filter: blur(6px);
   display:flex;
   align-items:flex-start;
@@ -383,8 +394,8 @@ hr{
   overflow: hidden;
   border-radius: 18px;
   border: 1px solid var(--border);
-  background: linear-gradient(180deg, rgba(17,26,44,0.98), rgba(15,23,42,0.96));
-  box-shadow: 0 20px 80px rgba(0,0,0,0.55);
+  background: var(--panel);
+  box-shadow: 0 20px 80px rgba(0,0,0,0.60);
 }
 
 .modal-header{
@@ -393,7 +404,8 @@ hr{
   justify-content:space-between;
   gap:12px;
   padding: 14px 14px 12px 14px;
-  border-bottom: 1px solid rgba(35,48,74,0.7);
+  border-bottom: 1px solid rgba(27,42,68,0.85);
+  background: rgba(13,22,40,0.55);
 }
 
 .modal-title{
@@ -422,7 +434,7 @@ hr{
 }
 
 .modal-close{
-  background: rgba(255,255,255,0.06);
+  background: rgba(255,255,255,0.05);
   border: 1px solid var(--border);
   color: var(--text);
   border-radius: 12px;
@@ -430,10 +442,11 @@ hr{
   cursor:pointer;
 }
 .modal-close:hover{
-  background: rgba(255,255,255,0.09);
+  background: rgba(255,255,255,0.08);
 }
 
 /* Optional: give FeatureDetail inner cards a bit more breathing room in modal */
 .modal .card{
-  background: rgba(0,0,0,0.18);
+  background: var(--panel2);
+  box-shadow: none;
 }
