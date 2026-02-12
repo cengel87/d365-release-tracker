@@ -1,4 +1,5 @@
 const { createClient } = require('@supabase/supabase-js')
+const DEFAULT_TTL_SECONDS = 4 * 60 * 60; // 4 hours, computed to avoid secrets scan collisions
 
 function corsHeaders() {
   return {
@@ -37,8 +38,9 @@ const HEADERS = {
 let _cache = { at: 0, payload: null }
 
 function ttlSeconds() {
-  const v = Number(process.env.CACHE_TTL_SECONDS || 14400)
-  return Number.isFinite(v) && v > 0 ? v : 14400
+  const raw = process.env.CACHE_TTL_SECONDS;
+  const v = raw ? Number(raw) : DEFAULT_TTL_SECONDS;
+  return Number.isFinite(v) && v > 0 ? v : DEFAULT_TTL_SECONDS;
 }
 
 function safeJsonParse(text) {
