@@ -321,7 +321,7 @@ textarea{ width:100%; min-height:90px; resize:vertical; }
    Watchlist table column sizing (6 cols)
    ========================= */
 .watchlist-table th:nth-child(1),
-.watchlist-table td:nth-child(1){ width: 130px; } /* Impact */
+.watchlist-table td:nth-child(1){ width: 100px; } /* Impact */
 .watchlist-table th:nth-child(2),
 .watchlist-table td:nth-child(2){ width: 80px; } /* Status */
 .watchlist-table th:nth-child(3),
@@ -332,6 +332,8 @@ textarea{ width:100%; min-height:90px; resize:vertical; }
 .watchlist-table td:nth-child(5){ width: 160px; } /* Wave */
 .watchlist-table th:nth-child(6),
 .watchlist-table td:nth-child(6){ width: 120px; } /* GA */
+.watchlist-table th:nth-child(7),
+.watchlist-table td:nth-child(7){ width: 420px; } /* Enablement */
 
 /* Full-width tables */
 .fullwidth-table .table-wrap table{

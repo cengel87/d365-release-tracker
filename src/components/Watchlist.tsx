@@ -88,7 +88,7 @@ export function Watchlist(props: {
         </div>
 
         <div className="table-wrap" style={{ marginTop: 10 }}>
-          <table style={{ minWidth: 900 }}>
+          <table className="watchlist-table">
             <thead>
               <tr>
                 <th className="sortable" onClick={() => toggleSort('impact')}>Impact{arrow('impact')}</th>
