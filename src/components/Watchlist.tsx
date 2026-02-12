@@ -111,9 +111,9 @@ export function Watchlist(props: {
                     className="row-clickable"
                   >
                     <td>{w.impact}</td>
-                    <td>{statusEmoji(ff.status)} {ff.status}</td>
+                    <td>{statusEmoji(ff.status)}</td>
                     <td>{ff['Product name']}</td>
-                    <td><b>{ff['Feature name']}</b></td>
+                    <td>{ff['Feature name']}</td>
                     <td>{ff.releaseWave ?? 'TBD'}</td>
                     <td>{fmtDate(ff.gaDate)}</td>
                     <td>{String(ff['Enabled for'] ?? '')}</td>
