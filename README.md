@@ -93,10 +93,6 @@ In Netlify:
 - Site → **Site configuration → Environment variables**
 Add:
 
-- `SUPABASE_URL` = `https://YOUR_PROJECT.supabase.co`
-- `SUPABASE_SERVICE_ROLE_KEY` = your Supabase **Service Role** key (Project Settings → API)
-- Optional: `CACHE_TTL_SECONDS` = `14400` (4 hours)
-
 Locally, create `.env` from `.env.example` (same variable names).
 
 ---
