@@ -1,5 +1,5 @@
 const { createClient } = require('@supabase/supabase-js')
-const DEFAULT_TTL_SECONDS = 4 * 60 * 60; // 4 hours, computed to avoid secrets scan collisions
+const DEFAULT_TTL_SECONDS = 4 * 60 * 60; // 4 hours
 
 function corsHeaders() {
   return {
@@ -63,7 +63,10 @@ async function fetchAllReleasePlans() {
   const results = []
   for (let page = 1; page <= 20; page++) {
     const url = page === 1 ? API_URL : `${API_URL}?page=${page}`
-    const resp = await fetch(url, { headers: HEADERS })
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 5000); // 5s timeout per page
+    const resp = await fetch(url, { headers: HEADERS, signal: controller.signal });
+    clearTimeout(timeoutId);
     if (!resp.ok) throw new Error(`Microsoft API error ${resp.status}`)
     const text = await resp.text()
     const data = safeJsonParse(text)

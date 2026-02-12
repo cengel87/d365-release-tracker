@@ -12,6 +12,14 @@ const TRACKED_FIELDS = [
   'Investment area',
 ]
 
+async function isFirstSync(sb) {
+  const { count, error } = await sb
+    .from('feature_snapshots')
+    .select('id', { count: 'exact', head: true });
+  if (error) throw error;
+  return (count ?? 0) === 0;
+}
+
 function classify(field) {
   if (field === 'GA date' || field === 'Public preview date' || field === 'Early access date') return 'date_change'
   if (field === 'GA Release Wave' || field === 'Public Preview Release Wave') return 'wave_change'
@@ -21,18 +29,52 @@ function classify(field) {
 
 exports.handler = async (event) => {
   if (event.httpMethod === 'OPTIONS') return { statusCode: 200, headers: corsHeaders(), body: '' }
-  if (event.httpMethod !== 'POST') return bad(405, 'Method not allowed')
+  // Allow GET for direct testing (treat as POST)
+  if (event.httpMethod !== 'POST' && event.httpMethod !== 'GET') return bad(405, 'Method not allowed')
 
   try {
-    const sb = getSupabaseAdmin()
-    const payload = await fetchAllReleasePlans()
-    const features = payload.results
+    const sb = getSupabaseAdmin();
+    console.log('Supabase initialized successfully');
 
-    console.log(`Fetched ${features.length} features`); // For logs
+    const firstSync = await isFirstSync(sb);
+    console.log('First sync check:', firstSync);
 
-    const allRpids = features.map(f => String(f['Release Plan ID'] || '').trim()).filter(Boolean);
+    const payload = await fetchAllReleasePlans();
+    const features = payload.results;
+    console.log(`Fetched ${features.length} features`);
 
-    // Bulk fetch all latest snapshots
+    let newCount = 0;
+    let changedCount = 0;
+
+    if (firstSync) {
+      // Baseline mode: batch insert snapshots only; no change logs
+      const batchSize = 200;
+      const newSnapshots = features
+        .map((f) => {
+          const rpid = String(f?.['Release Plan ID'] || '').trim();
+          if (!rpid) return null;
+          return { release_plan_id: rpid, snapshot_data: f };
+        })
+        .filter(Boolean);
+
+      for (let i = 0; i < newSnapshots.length; i += batchSize) {
+        const batch = newSnapshots.slice(i, i + batchSize);
+        const { error } = await sb.from('feature_snapshots').insert(batch);
+        if (error) throw error;
+      }
+
+      console.log('Baseline snapshots inserted');
+      return ok({
+        total: features.length,
+        newCount: 0,
+        changedCount: 0,
+        baseline: true,
+        message: 'Baseline snapshots created. No changes logged on first sync.',
+      });
+    }
+
+    // Normal mode: bulk fetch latest snapshots
+    const allRpids = features.map((f) => String(f?.['Release Plan ID'] || '').trim()).filter(Boolean);
     const { data: allSnapshots, error: snapErr } = await sb
       .from('feature_snapshots')
       .select('release_plan_id, snapshot_data')
@@ -40,19 +82,17 @@ exports.handler = async (event) => {
       .order('fetched_at', { ascending: false });
     if (snapErr) throw snapErr;
 
-    // Map for quick lookup (latest per RPID)
     const snapshotMap = new Map();
-    allSnapshots.forEach(s => {
+    allSnapshots.forEach((s) => {
       if (!snapshotMap.has(s.release_plan_id)) snapshotMap.set(s.release_plan_id, s.snapshot_data || {});
     });
+    console.log(`Fetched ${snapshotMap.size} existing snapshots`);
 
     const newSnapshots = [];
     const changeLogs = [];
-    let newCount = 0;
-    let changedCount = 0;
 
     for (const f of features) {
-      const rpid = String(f['Release Plan ID'] || '').trim()
+      const rpid = String(f?.['Release Plan ID'] || '').trim();
       if (!rpid) continue;
 
       const prevData = snapshotMap.get(rpid);
@@ -62,8 +102,8 @@ exports.handler = async (event) => {
         newSnapshots.push({ release_plan_id: rpid, snapshot_data: f });
         changeLogs.push({
           release_plan_id: rpid,
-          feature_name: String(f['Feature name'] || ''),
-          product_name: String(f['Product name'] || ''),
+          feature_name: String(f?.['Feature name'] || ''),
+          product_name: String(f?.['Product name'] || ''),
           change_type: 'new_feature',
           field_changed: null,
           old_value: null,
@@ -74,14 +114,14 @@ exports.handler = async (event) => {
       }
 
       for (const field of TRACKED_FIELDS) {
-        const oldVal = String(prevData[field] ?? '').trim();
-        const newVal = String(f[field] ?? '').trim();
+        const oldVal = String(prevData?.[field] ?? '').trim();
+        const newVal = String(f?.[field] ?? '').trim();
         if (oldVal !== newVal) {
           changesFound = true;
           changeLogs.push({
             release_plan_id: rpid,
-            feature_name: String(f['Feature name'] || ''),
-            product_name: String(f['Product name'] || ''),
+            feature_name: String(f?.['Feature name'] || ''),
+            product_name: String(f?.['Product name'] || ''),
             change_type: classify(field),
             field_changed: field,
             old_value: oldVal.slice(0, 500),
@@ -96,7 +136,7 @@ exports.handler = async (event) => {
       }
     }
 
-    // Batch insert new snapshots
+    // Batch insert new snapshots and change logs
     const batchSize = 200;
     for (let i = 0; i < newSnapshots.length; i += batchSize) {
       const batch = newSnapshots.slice(i, i + batchSize);
@@ -104,18 +144,17 @@ exports.handler = async (event) => {
       if (error) throw error;
     }
 
-    // Batch insert change logs
     for (let i = 0; i < changeLogs.length; i += batchSize) {
       const batch = changeLogs.slice(i, i + batchSize);
       const { error } = await sb.from('change_log').insert(batch);
       if (error) throw error;
     }
 
-    console.log(`Processed: ${newCount} new, ${changedCount} changed`); // For logs
+    console.log(`Processed: ${newCount} new, ${changedCount} changed`);
 
-    return ok({ total: features.length, newCount, changedCount })
+    return ok({ total: features.length, newCount, changedCount, baseline: false });
   } catch (e) {
-    console.error(e); // Log full error
-    return bad(500, 'Refresh failed', { detail: String(e.message || e) })
+    console.error('Refresh error:', e);
+    return bad(500, 'Refresh failed', { detail: String(e?.message || e) });
   }
 }
