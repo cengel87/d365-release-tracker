@@ -46,7 +46,7 @@ export function FeatureModal(props: {
             </div>
             {feature && (
               <div className="modal-subtitle">
-                {feature['Product name']} · {feature.releaseWave ?? 'TBD'} · GA: {fmtDate(feature.gaDate)}
+               {feature['Product name']} | {feature.releaseWave ?? 'TBD'} | GA: {fmtDate(feature.gaDate)} | {feature['Enabled for'] ?? ''}
               </div>
             )}
           </div>

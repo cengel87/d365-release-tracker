@@ -305,7 +305,7 @@ textarea{ width:100%; min-height:90px; resize:vertical; }
 .features-table th:nth-child(1),
 .features-table td:nth-child(1){ width: 44px; }  /* 👁️ */
 .features-table th:nth-child(2),
-.features-table td:nth-child(2){ width: 170px; } /* Status */
+.features-table td:nth-child(2){ width: 80px; } /* Status */
 .features-table th:nth-child(3),
 .features-table td:nth-child(3){ width: 260px; } /* Product */
 .features-table th:nth-child(4),
@@ -405,18 +405,19 @@ hr{
   gap:12px;
   padding: 14px 14px 12px 14px;
   border-bottom: 1px solid rgba(27,42,68,0.85);
-  background: rgba(13,22,40,0.55);
+  background: var(--bg);
 }
 
 .modal-title{
   font-size: 16px;
   font-weight: 900;
   line-height: 1.2;
+  color: var(--accent);
 }
 
 .modal-subtitle{
   margin-top: 6px;
-  color: var(--muted);
+  color: var(--accent);
   font-size: 12px;
 }
 
