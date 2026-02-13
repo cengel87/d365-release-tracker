@@ -283,7 +283,7 @@ export default function App() {
                 />
               )}
 
-              {tab === 'Changes' && <Changes />}
+              {tab === 'Changes' && <Changes watchIds={watchIds} />}
 
               {tab === 'Help' && <Help fetchedAt={releaseQ.data.fetchedAt} sourceUrl={releaseQ.data.sourceUrl} />}
             </>
