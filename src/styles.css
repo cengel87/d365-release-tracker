@@ -453,3 +453,58 @@ hr{
   background: var(--panel2);
   box-shadow: none;
 }
+
+/* =========================
+   Changes: expandable grouped rows
+   ========================= */
+.changes-table .expand-icon{
+  display:inline-block;
+  transition: transform 0.15s ease;
+  font-size:12px;
+  color: var(--muted);
+  width:16px;
+  text-align:center;
+}
+.changes-table .expand-icon.open{
+  transform: rotate(90deg);
+}
+
+.changes-table tr.changes-summary{ cursor:pointer; }
+.changes-table tr.changes-summary:hover td{ background: rgba(255,255,255,0.04); }
+
+.changes-table tr.changes-detail td{
+  background: rgba(255,255,255,0.02);
+  font-size:12px;
+  color: var(--muted);
+  border-bottom: 1px solid rgba(27,42,68,0.4);
+  padding-top:7px;
+  padding-bottom:7px;
+}
+
+.changes-table .change-badges{
+  display:flex;
+  gap:4px;
+  flex-wrap:wrap;
+}
+
+.changes-table .change-badge{
+  display:inline-flex;
+  padding:2px 6px;
+  border-radius:6px;
+  font-size:11px;
+  background: rgba(255,255,255,0.04);
+  border: 1px solid rgba(27,42,68,0.6);
+  white-space:nowrap;
+}
+
+.changes-table .count-badge{
+  display:inline-flex;
+  padding:2px 8px;
+  border-radius:8px;
+  font-size:12px;
+  font-weight:600;
+  background: rgba(56,189,248,0.10);
+  border: 1px solid rgba(56,189,248,0.25);
+  color: var(--text);
+  white-space:nowrap;
+}
