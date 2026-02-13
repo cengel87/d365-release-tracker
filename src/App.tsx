@@ -151,6 +151,38 @@ export default function App() {
     return Array.from(map.values()).sort((a, b) => a.month.localeCompare(b.month)).slice(0, 18)
   }, [all, watchQ.data])
 
+  const upcomingPreviewByMonth = useMemo(() => {
+    const today = new Date(); today.setHours(0, 0, 0, 0)
+    const future = all.filter(x => x.previewDate && x.previewDate > today) as (EnrichedFeature & { previewDate: Date })[]
+    const map = new Map<string, { month: string; label: string; count: number; highImpact: number }>()
+    const impacts = new Map((watchQ.data ?? []).map(w => [w.release_plan_id, w.impact] as const))
+    for (const f of future) {
+      const k = monthKey(f.previewDate)
+      const label = monthLabel(f.previewDate)
+      const prev = map.get(k) ?? { month: k, label, count: 0, highImpact: 0 }
+      prev.count += 1
+      if (impacts.get(f['Release Plan ID']) === '🔴 High') prev.highImpact += 1
+      map.set(k, prev)
+    }
+    return Array.from(map.values()).sort((a, b) => a.month.localeCompare(b.month)).slice(0, 18)
+  }, [all, watchQ.data])
+
+  const upcomingEarlyAccessByMonth = useMemo(() => {
+    const today = new Date(); today.setHours(0, 0, 0, 0)
+    const future = all.filter(x => x.earlyAccessDate && x.earlyAccessDate > today) as (EnrichedFeature & { earlyAccessDate: Date })[]
+    const map = new Map<string, { month: string; label: string; count: number; highImpact: number }>()
+    const impacts = new Map((watchQ.data ?? []).map(w => [w.release_plan_id, w.impact] as const))
+    for (const f of future) {
+      const k = monthKey(f.earlyAccessDate)
+      const label = monthLabel(f.earlyAccessDate)
+      const prev = map.get(k) ?? { month: k, label, count: 0, highImpact: 0 }
+      prev.count += 1
+      if (impacts.get(f['Release Plan ID']) === '🔴 High') prev.highImpact += 1
+      map.set(k, prev)
+    }
+    return Array.from(map.values()).sort((a, b) => a.month.localeCompare(b.month)).slice(0, 18)
+  }, [all, watchQ.data])
+
   const byWaveMonth = useMemo(() => {
     const today = new Date(); today.setHours(0, 0, 0, 0)
     const future = all.filter(x => x.gaDate && x.gaDate > today && x.releaseWave) as (EnrichedFeature & { gaDate: Date, releaseWave: string })[]
@@ -220,6 +252,8 @@ export default function App() {
                 <Dashboard
                   metrics={metrics}
                   upcomingByMonth={upcomingByMonth}
+                  upcomingPreviewByMonth={upcomingPreviewByMonth}
+                  upcomingEarlyAccessByMonth={upcomingEarlyAccessByMonth}
                   byWaveMonth={byWaveMonth}
                   fetchedAt={releaseQ.data.fetchedAt}
                   sourceUrl={releaseQ.data.sourceUrl}
