@@ -519,12 +519,6 @@ textarea{
   color: rgb(136, 38, 175);
 }
 
-.pill.ea{
-  border-color: rgba(255, 255, 255, 0.35);
-  background: var(--accent-dim);
-  color: rgb(136, 38, 175);
-}
-
 /* ── Code / separators ── */
 pre{
   background: rgba(0,0,0,0.4);
