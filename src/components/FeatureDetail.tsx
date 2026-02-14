@@ -39,10 +39,10 @@ export function FeatureDetail({ feature, watched, onToggleWatch, showImpact, ide
       {!hideHeader && (
         <div className="row" style={{ justifyContent: 'space-between' }}>
           <div>
-            <div style={{ fontSize: 16, fontWeight: 800 }}>
+            <div style={{ fontSize: 16, fontWeight: 700, letterSpacing: '-0.01em' }}>
               {statusEmoji(feature.status)} {feature['Feature name']}
             </div>
-            <div style={{ color: 'var(--muted)', marginTop: 4 }}>
+            <div style={{ color: 'var(--text-secondary)', marginTop: 6, fontSize: 13 }}>
               {feature['Product name']} · {feature.releaseWave ?? 'TBD'} · {String(feature['Enabled for'] ?? '')}
             </div>
             <div style={{ color: 'var(--muted)', marginTop: 4, fontSize: 12 }}>
@@ -52,9 +52,9 @@ export function FeatureDetail({ feature, watched, onToggleWatch, showImpact, ide
           </div>
           <div className="row">
             <button className={`btn small ${watched ? 'danger' : ''}`} onClick={onToggleWatch}>
-              {watched ? '👁️ Remove' : '👁️ Add to watchlist'}
+              {watched ? 'Remove' : 'Add to watchlist'}
             </button>
-            {feature.msLink && <a className="btn small" href={feature.msLink} target="_blank" rel="noreferrer">🔗 Microsoft</a>}
+            {feature.msLink && <a className="btn small" href={feature.msLink} target="_blank" rel="noreferrer">View on Microsoft</a>}
           </div>
         </div>
       )}
@@ -71,39 +71,39 @@ export function FeatureDetail({ feature, watched, onToggleWatch, showImpact, ide
       <hr />
 
       <div className="grid grid2">
-        <div className="card" style={{ padding: 12 }}>
+        <div className="card" style={{ padding: 14 }}>
           <h3>Business value</h3>
-          <div style={{ whiteSpace: 'pre-wrap' }}>
+          <div style={{ whiteSpace: 'pre-wrap', color: 'var(--text-secondary)', lineHeight: 1.6, fontSize: 13 }}>
             {stripHtml(String(feature['Business value'] ?? '').trim()) || '—'}
           </div>
         </div>
-        <div className="card" style={{ padding: 12 }}>
+        <div className="card" style={{ padding: 14 }}>
           <h3>Feature details</h3>
-          <div style={{ whiteSpace: 'pre-wrap' }}>
+          <div style={{ whiteSpace: 'pre-wrap', color: 'var(--text-secondary)', lineHeight: 1.6, fontSize: 13 }}>
             {stripHtml(String(feature['Feature details'] ?? '').trim()) || '—'}
           </div>
         </div>
       </div>
 
-      <div className="card" style={{ marginTop: 12 }}>
+      <div className="card" style={{ marginTop: 14 }}>
         <h3>Team notes</h3>
-        {notesQ.isLoading && <div style={{ color: 'var(--muted)' }}>Loading notes…</div>}
-        {notesQ.isError && <div style={{ color: 'var(--muted)' }}>Failed to load notes.</div>}
-        {notesQ.data && notesQ.data.length === 0 && <div style={{ color: 'var(--muted)' }}>No notes yet.</div>}
+        {notesQ.isLoading && <div style={{ color: 'var(--muted)', fontSize: 13 }}>Loading notes…</div>}
+        {notesQ.isError && <div style={{ color: 'var(--danger)', fontSize: 13 }}>Failed to load notes.</div>}
+        {notesQ.data && notesQ.data.length === 0 && <div style={{ color: 'var(--muted)', fontSize: 13 }}>No notes yet.</div>}
         {notesQ.data && notesQ.data.length > 0 && (
           <div style={{ display: 'grid', gap: 8 }}>
             {notesQ.data.slice(0, 10).map(n => (
-              <div key={n.id} className="card" style={{ padding: 10 }}>
+              <div key={n.id} className="card" style={{ padding: 12 }}>
                 <div style={{ fontSize: 12, color: 'var(--muted)' }}>
-                  <b>{n.author_name}</b> · {n.created_at.slice(0, 10)}
+                  <b style={{ color: 'var(--text-secondary)' }}>{n.author_name}</b> · {n.created_at.slice(0, 10)}
                 </div>
-                <div style={{ marginTop: 4, whiteSpace: 'pre-wrap' }}>{n.content}</div>
+                <div style={{ marginTop: 6, whiteSpace: 'pre-wrap', color: 'var(--text-secondary)', fontSize: 13, lineHeight: 1.5 }}>{n.content}</div>
               </div>
             ))}
           </div>
         )}
 
-        <div style={{ marginTop: 10 }}>
+        <div style={{ marginTop: 12 }}>
           <textarea value={note} onChange={e => setNote(e.target.value)} placeholder="Add a note… (keep it actionable)" />
           <div className="row" style={{ justifyContent: 'space-between', marginTop: 8 }}>
             <span className="badge">Posting as: {identityName || 'Guest'}</span>
@@ -121,8 +121,8 @@ export function FeatureDetail({ feature, watched, onToggleWatch, showImpact, ide
         </div>
       </div>
 
-      <div className="card" style={{ marginTop: 12 }}>
-        <h3>Raw JSON (from Microsoft feed)</h3>
+      <div className="card" style={{ marginTop: 14 }}>
+        <h3>Raw JSON (Microsoft feed)</h3>
         <pre>{JSON.stringify(feature, null, 2)}</pre>
       </div>
     </>

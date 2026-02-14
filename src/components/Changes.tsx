@@ -120,8 +120,8 @@ export function Changes({ watchIds }: { watchIds: Set<string> }) {
       <div className="card">
         <div className="row" style={{ justifyContent: 'space-between' }}>
           <div>
-            <h3 style={{ margin: 0 }}>Change feed (auto-detected)</h3>
-            <div style={{ color: 'var(--muted)', fontSize: 12 }}>Runs on demand via "Refresh & detect changes".</div>
+            <h3 style={{ margin: 0 }}>Change feed</h3>
+            <div style={{ color: 'var(--muted)', fontSize: 12, marginTop: 4 }}>Auto-detected on demand via Refresh.</div>
           </div>
           <div className="row">
             <Pill kind="muted">{summary.featureCount.toLocaleString()} feature{summary.featureCount !== 1 ? 's' : ''}</Pill>
@@ -141,9 +141,9 @@ export function Changes({ watchIds }: { watchIds: Set<string> }) {
       <div className="card fullwidth-table">
         <h3>Recent changes</h3>
 
-        {q.isLoading && <div style={{ color: 'var(--muted)' }}>Loading…</div>}
-        {q.isError && <div style={{ color: 'var(--muted)' }}>Failed: {String(q.error)}</div>}
-        {q.data && q.data.length === 0 && <div style={{ color: 'var(--muted)' }}>No changes in this period.</div>}
+        {q.isLoading && <div style={{ color: 'var(--muted)', fontSize: 13 }}>Loading…</div>}
+        {q.isError && <div style={{ color: 'var(--danger)', fontSize: 13 }}>Failed: {String(q.error)}</div>}
+        {q.data && q.data.length === 0 && <div style={{ color: 'var(--muted)', fontSize: 13 }}>No changes in this period.</div>}
 
         {q.data && q.data.length > 0 && (
           <div className="table-wrap" style={{ marginTop: 10 }}>
@@ -199,7 +199,7 @@ export function Changes({ watchIds }: { watchIds: Set<string> }) {
                             rel="noreferrer"
                             onClick={(e) => e.stopPropagation()}
                           >
-                            🔗 Microsoft
+                            Verify
                           </a>
                         </td>
                       </tr>
@@ -211,10 +211,10 @@ export function Changes({ watchIds }: { watchIds: Set<string> }) {
                         let changeText: string
 
                         if (c.change_type === 'new_feature') {
-                          fieldLabel = '🆕 New feature'
+                          fieldLabel = 'New feature'
                           changeText = 'Feature added to release plan'
                         } else if (c.change_type === 'removed') {
-                          fieldLabel = '🗑️ Removed'
+                          fieldLabel = 'Removed'
                           changeText = 'Feature removed from release plan'
                         } else {
                           fieldLabel = c.field_changed ?? '—'
@@ -242,8 +242,8 @@ export function Changes({ watchIds }: { watchIds: Set<string> }) {
         )}
 
         {sorted.length > 500 && (
-          <div style={{ color: 'var(--muted)', fontSize: 12, marginTop: 8 }}>
-            Showing up to 500 features for performance. Narrow the time range if needed.
+          <div style={{ color: 'var(--muted)', fontSize: 12, marginTop: 10, opacity: 0.8 }}>
+            Showing up to 500 features. Narrow the time range for more results.
           </div>
         )}
       </div>

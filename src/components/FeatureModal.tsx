@@ -46,7 +46,7 @@ export function FeatureModal(props: {
             </div>
             {feature && (
               <div className="modal-subtitle">
-               {feature['Product name']} | {feature.releaseWave ?? 'TBD'} | GA: {fmtDate(feature.gaDate)} | {feature['Enabled for'] ?? ''}
+               {feature['Product name']} · {feature.releaseWave ?? 'TBD'} · GA: {fmtDate(feature.gaDate)} · {feature['Enabled for'] ?? ''}
               </div>
             )}
           </div>
@@ -55,10 +55,10 @@ export function FeatureModal(props: {
             {feature && (
               <>
                 <button className={`btn small ${watched ? 'danger' : ''}`} onClick={onToggleWatch}>
-                  {watched ? '👁️ Remove' : '👁️ Add to watchlist'}
+                  {watched ? 'Remove' : 'Add to watchlist'}
                 </button>
                 {feature.msLink && (
-                  <a className="btn small" href={feature.msLink} target="_blank" rel="noreferrer">🔗 Microsoft</a>
+                  <a className="btn small" href={feature.msLink} target="_blank" rel="noreferrer">View on Microsoft</a>
                 )}
               </>
             )}

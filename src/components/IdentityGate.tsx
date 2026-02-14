@@ -8,8 +8,8 @@ export function IdentityGate({ children }: { children: (ident: ReturnType<typeof
     return (
       <div className="container">
         <div className="card">
-          <div className="h-title">👋 Quick identity (for notes)</div>
-          <p style={{ color: 'var(--muted)', marginTop: 6 }}>
+          <div className="h-title">Quick identity setup</div>
+          <p style={{ color: 'var(--text-secondary)', marginTop: 8, fontSize: 13, lineHeight: 1.6 }}>
             Enter a display name. This is stored in your browser only and sent with any notes you post.
           </p>
           <div className="row">
