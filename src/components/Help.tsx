@@ -20,7 +20,7 @@ export function Help({ fetchedAt, sourceUrl }: { fetchedAt: string, sourceUrl: s
         <div className="row" style={{ gap: 10 }}>
           <Pill kind="ok">Generally Available</Pill>
           <Pill kind="info">Public Preview</Pill>
-          <Pill kind="info">Early Access</Pill>
+          <Pill kind="ea">Early Access</Pill>
           <Pill kind="muted">Planned</Pill>
         </div>
         <hr />

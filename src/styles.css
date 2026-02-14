@@ -460,21 +460,21 @@ textarea{
 
 /* ── Watchlist table column sizing (8 cols) ── */
 .watchlist-table th:nth-child(1),
-.watchlist-table td:nth-child(1){ width: 100px; }  /* Impact */
+.watchlist-table td:nth-child(1){ width: 90px; }   /* Impact */
 .watchlist-table th:nth-child(2),
-.watchlist-table td:nth-child(2){ width: 100px; }  /* Flagged for */
+.watchlist-table td:nth-child(2){ width: 90px; }   /* Flagged for */
 .watchlist-table th:nth-child(3),
-.watchlist-table td:nth-child(3){ width: 80px; }   /* Status */
+.watchlist-table td:nth-child(3){ width: 70px; }   /* Status */
 .watchlist-table th:nth-child(4),
-.watchlist-table td:nth-child(4){ width: 260px; }  /* Product */
+.watchlist-table td:nth-child(4){ width: 200px; }  /* Product */
 .watchlist-table th:nth-child(5),
-.watchlist-table td:nth-child(5){ width: 520px; }  /* Feature */
+.watchlist-table td:nth-child(5){ width: 400px; }  /* Feature */
 .watchlist-table th:nth-child(6),
-.watchlist-table td:nth-child(6){ width: 160px; }  /* Wave */
+.watchlist-table td:nth-child(6){ width: 130px; }  /* Wave */
 .watchlist-table th:nth-child(7),
-.watchlist-table td:nth-child(7){ width: 120px; }  /* GA */
+.watchlist-table td:nth-child(7){ width: 100px; }  /* GA */
 .watchlist-table th:nth-child(8),
-.watchlist-table td:nth-child(8){ width: 360px; }  /* Enabled for */
+.watchlist-table td:nth-child(8){ width: 300px; }  /* Enabled for */
 
 /* Full-width tables */
 .fullwidth-table .table-wrap table{
@@ -512,6 +512,11 @@ textarea{
 }
 .pill.muted{
   color: var(--muted);
+}
+.pill.ea{
+  border-color: rgba(194, 56, 248, 0.35);
+  background: var(--accent-dim);
+  color: rgb(136, 38, 175);
 }
 
 /* ── Code / separators ── */
