@@ -9,19 +9,6 @@ A maintainable rewrite of your Streamlit concept:
   - Change detection (snapshots + change log), run on-demand
 - **Supabase Postgres** (free tier) as the database
 
-## What we kept (highest value)
-- ✅ **Watchlist + impact assessment** (key feature)
-- ✅ **Team notes** on watched items
-- ✅ **Meaningful visuals**:
-  - Upcoming GA features by **month**
-  - Release Wave “channel” view with monthly GA volume
-- ✅ **Accurate data**: fetched live from Microsoft Release Plans feed each refresh
-- ✅ **Raw JSON** displayed for transparency
-- ✅ **Deep-link to Microsoft** per feature
-- ❌ Removed: **Saved Views** (per your request)
-
----
-
 ## 1) Prereqs
 - Node.js 18+ (Netlify uses Node 18/20)
 - A free Supabase project
