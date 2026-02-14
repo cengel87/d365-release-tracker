@@ -25,11 +25,14 @@ export type EnrichedFeature = ReleaseFeature & {
   msLink: string | null
 }
 
+export type FlaggedFor = 'Business' | 'Tech Team' | 'Both' | ''
+
 export type WatchlistItem = {
   release_plan_id: string
   feature_name: string
   product_name: string
   impact: '🔴 High' | '🟡 Medium' | '🟢 Low' | '🚩 To Review'
+  flagged_for: FlaggedFor
   added_at: string
 }
 

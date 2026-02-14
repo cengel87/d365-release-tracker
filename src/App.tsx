@@ -119,6 +119,10 @@ export default function App() {
     mutationFn: api.setImpact,
     onSuccess: () => qc.invalidateQueries({ queryKey: ['watchlist'] }),
   })
+  const setFlaggedFor = useMutation({
+    mutationFn: api.setFlaggedFor,
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['watchlist'] }),
+  })
 
   const products = useMemo(() => Array.from(new Set(all.map(x => x['Product name']).filter(Boolean))).sort(), [all])
   const waves = useMemo(() => Array.from(new Set(all.map(x => x.releaseWave).filter(Boolean) as string[])).sort(), [all])
@@ -217,6 +221,11 @@ export default function App() {
     return (watchQ.data ?? []).find(w => w.release_plan_id === selectedId)?.impact
   }, [watchQ.data, selectedId])
 
+  const selectedFlaggedFor = useMemo(() => {
+    if (!selectedId) return undefined
+    return (watchQ.data ?? []).find(w => w.release_plan_id === selectedId)?.flagged_for
+  }, [watchQ.data, selectedId])
+
   function toggleSelectedWatch() {
     if (!selected) return
     const id = selected['Release Plan ID']
@@ -301,6 +310,11 @@ export default function App() {
             onSetImpact={(impact) => {
               if (!selectedId) return
               setImpact.mutate({ release_plan_id: selectedId, impact })
+            }}
+            flaggedFor={selectedFlaggedFor}
+            onSetFlaggedFor={(flagged_for) => {
+              if (!selectedId) return
+              setFlaggedFor.mutate({ release_plan_id: selectedId, flagged_for })
             }}
           />
         </div>

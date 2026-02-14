@@ -1,7 +1,7 @@
 import React, { useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { api } from '../api'
-import type { EnrichedFeature, WatchlistItem } from '../types'
+import type { EnrichedFeature, FlaggedFor, WatchlistItem } from '../types'
 import { fmtDate, statusEmoji } from '../logic'
 import { stripHtml } from '../utils/text'
 import { Pill } from './Pill'
@@ -10,7 +10,14 @@ const IMPACT_OPTIONS: WatchlistItem['impact'][] = ['🔴 High', '🟡 Medium', '
   (v, i, a) => a.indexOf(v) === i
 ) as any
 
-export function FeatureDetail({ feature, watched, onToggleWatch, showImpact, identityName, impact, onSetImpact, hideHeader }: {
+const FLAGGED_FOR_OPTIONS: { value: FlaggedFor; label: string }[] = [
+  { value: '', label: 'Not set' },
+  { value: 'Business', label: 'Business' },
+  { value: 'Tech Team', label: 'Tech Team' },
+  { value: 'Both', label: 'Both' },
+]
+
+export function FeatureDetail({ feature, watched, onToggleWatch, showImpact, identityName, impact, onSetImpact, flaggedFor, onSetFlaggedFor, hideHeader }: {
   feature: EnrichedFeature
   watched: boolean
   onToggleWatch: () => void
@@ -18,6 +25,8 @@ export function FeatureDetail({ feature, watched, onToggleWatch, showImpact, ide
   identityName: string
   impact?: WatchlistItem['impact']
   onSetImpact?: (impact: WatchlistItem['impact']) => void
+  flaggedFor?: FlaggedFor
+  onSetFlaggedFor?: (flaggedFor: FlaggedFor) => void
   hideHeader?: boolean
 }) {
   const id = feature['Release Plan ID']
@@ -60,11 +69,21 @@ export function FeatureDetail({ feature, watched, onToggleWatch, showImpact, ide
       )}
 
       {showImpact && onSetImpact && (
-        <div className="row" style={{ marginTop: 10 }}>
-          <Pill kind="info">Impact assessment</Pill>
-          <select value={impact ?? '🚩 To Review'} onChange={(e) => onSetImpact(e.target.value as any)}>
-            {IMPACT_OPTIONS.map(o => <option key={o} value={o}>{o}</option>)}
-          </select>
+        <div className="row" style={{ marginTop: 10, gap: 16 }}>
+          <div className="row">
+            <Pill kind="info">Impact</Pill>
+            <select value={impact ?? '🚩 To Review'} onChange={(e) => onSetImpact(e.target.value as any)}>
+              {IMPACT_OPTIONS.map(o => <option key={o} value={o}>{o}</option>)}
+            </select>
+          </div>
+          {onSetFlaggedFor && (
+            <div className="row">
+              <Pill kind="info">Flagged for</Pill>
+              <select value={flaggedFor ?? ''} onChange={(e) => onSetFlaggedFor(e.target.value as FlaggedFor)}>
+                {FLAGGED_FOR_OPTIONS.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
+              </select>
+            </div>
+          )}
         </div>
       )}
 
