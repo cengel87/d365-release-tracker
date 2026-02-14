@@ -1,4 +1,4 @@
-import type { ChangeLogItem, Note, ReleaseFeature, WatchlistItem } from './types'
+import type { ChangeLogItem, FlaggedFor, Note, ReleaseFeature, WatchlistItem } from './types'
 
 async function j<T>(url: string, init?: RequestInit): Promise<T> {
   const res = await fetch(url, {
@@ -29,6 +29,9 @@ export const api = {
 
   setImpact: async (payload: { release_plan_id: string; impact: WatchlistItem['impact'] }) =>
     j('/.netlify/functions/watchlist-impact', { method: 'POST', body: JSON.stringify(payload) }),
+
+  setFlaggedFor: async (payload: { release_plan_id: string; flagged_for: FlaggedFor }) =>
+    j('/.netlify/functions/watchlist-flagged-for', { method: 'POST', body: JSON.stringify(payload) }),
 
   listNotes: async (release_plan_id: string): Promise<Note[]> =>
     j(`/.netlify/functions/notes?release_plan_id=${encodeURIComponent(release_plan_id)}`),

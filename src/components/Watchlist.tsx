@@ -4,7 +4,7 @@ import { fmtDate, statusEmoji } from '../logic'
 import { Pill } from './Pill'
 import { toCsv, download } from '../utils/csv'
 
-type SortKey = 'impact' | 'status' | 'product' | 'feature' | 'wave' | 'ga' | 'enabledFor'
+type SortKey = 'impact' | 'flaggedFor' | 'status' | 'product' | 'feature' | 'wave' | 'ga' | 'enabledFor'
 
 export function Watchlist(props: {
   all: EnrichedFeature[]
@@ -55,6 +55,7 @@ export function Watchlist(props: {
       const ff = row.f!
       switch (sort.key) {
         case 'impact': return impactRank(row.w.impact)
+        case 'flaggedFor': return String(row.w.flagged_for ?? '')
         case 'status': return String(ff.status ?? '')
         case 'product': return String(ff['Product name'] ?? '')
         case 'feature': return String(ff['Feature name'] ?? '')
@@ -92,6 +93,7 @@ export function Watchlist(props: {
             <thead>
               <tr>
                 <th className="sortable" onClick={() => toggleSort('impact')}>Impact{arrow('impact')}</th>
+                <th className="sortable" onClick={() => toggleSort('flaggedFor')}>Flagged for{arrow('flaggedFor')}</th>
                 <th className="sortable" onClick={() => toggleSort('status')}>Status{arrow('status')}</th>
                 <th className="sortable" onClick={() => toggleSort('product')}>Product{arrow('product')}</th>
                 <th className="sortable" onClick={() => toggleSort('feature')}>Feature{arrow('feature')}</th>
@@ -111,6 +113,7 @@ export function Watchlist(props: {
                     className="row-clickable"
                   >
                     <td>{w.impact}</td>
+                    <td>{w.flagged_for || '—'}</td>
                     <td>{statusEmoji(ff.status)}</td>
                     <td>{ff['Product name']}</td>
                     <td>{ff['Feature name']}</td>
@@ -129,6 +132,7 @@ export function Watchlist(props: {
           <button className="btn secondary" onClick={() => {
             const rows = sortedJoined.map(({ w, f }) => ({
               impact: w.impact,
+              flagged_for: w.flagged_for || '',
               status: f!.status,
               product: f!['Product name'],
               feature: f!['Feature name'],

@@ -1,5 +1,5 @@
 import React, { useEffect } from 'react'
-import type { EnrichedFeature, WatchlistItem } from '../types'
+import type { EnrichedFeature, FlaggedFor, WatchlistItem } from '../types'
 import type { DetailMode } from '../App'
 import { fmtDate, statusEmoji } from '../logic'
 import { FeatureDetail } from './FeatureDetail'
@@ -14,8 +14,10 @@ export function FeatureModal(props: {
   identityName: string
   impact?: WatchlistItem['impact']
   onSetImpact?: (impact: WatchlistItem['impact']) => void
+  flaggedFor?: FlaggedFor
+  onSetFlaggedFor?: (flaggedFor: FlaggedFor) => void
 }) {
-  const { open, onClose, feature, mode, watched, onToggleWatch, identityName, impact, onSetImpact } = props
+  const { open, onClose, feature, mode, watched, onToggleWatch, identityName, impact, onSetImpact, flaggedFor, onSetFlaggedFor } = props
 
   // Escape to close + lock background scroll
   useEffect(() => {
@@ -78,6 +80,8 @@ export function FeatureModal(props: {
               identityName={identityName}
               impact={impact ?? '🚩 To Review'}
               onSetImpact={onSetImpact}
+              flaggedFor={flaggedFor ?? ''}
+              onSetFlaggedFor={onSetFlaggedFor}
               hideHeader={true}
             />
           )}
