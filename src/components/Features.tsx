@@ -86,38 +86,39 @@ export function Features(props: {
             </select>
 
             {/* GA date range */}
-            <div className="flex flex-col gap-2">
-              <label className="text-sm font-medium"><code>   GA Date Range:   </code></label>
-
-              <input
-                className="input"
-                type="date"
-                value={filters.gaStart ? new Date(filters.gaStart).toISOString().slice(0, 10) : ''}
-                onChange={(e) =>
-                  setFilters({
-                    ...filters,
-                    gaStart: e.target.value
-                      ? new Date(e.target.value + 'T00:00:00')
-                      : null,
-                  })
-                }
-                title="GA start date"
-              />
-
-              <input
-                className="input"
-                type="date"
-                value={filters.gaEnd ? new Date(filters.gaEnd).toISOString().slice(0, 10) : ''}
-                onChange={(e) =>
-                  setFilters({
-                    ...filters,
-                    gaEnd: e.target.value
-                      ? new Date(e.target.value + 'T00:00:00')
-                      : null,
-                  })
-                }
-                title="GA end date"
-              />
+            <div className="field">
+              <span className="label">GA Date Range</span>
+              <div className="row" style={{ gap: 6 }}>
+                <input
+                  className="input"
+                  type="date"
+                  value={filters.gaStart ? new Date(filters.gaStart).toISOString().slice(0, 10) : ''}
+                  onChange={(e) =>
+                    setFilters({
+                      ...filters,
+                      gaStart: e.target.value
+                        ? new Date(e.target.value + 'T00:00:00')
+                        : null,
+                    })
+                  }
+                  title="GA start date"
+                />
+                <span style={{ color: 'var(--muted)', fontSize: 12 }}>to</span>
+                <input
+                  className="input"
+                  type="date"
+                  value={filters.gaEnd ? new Date(filters.gaEnd).toISOString().slice(0, 10) : ''}
+                  onChange={(e) =>
+                    setFilters({
+                      ...filters,
+                      gaEnd: e.target.value
+                        ? new Date(e.target.value + 'T00:00:00')
+                        : null,
+                    })
+                  }
+                  title="GA end date"
+                />
+              </div>
             </div>
 
           </div>
@@ -133,8 +134,8 @@ export function Features(props: {
           </div>
         </div>
 
-        <div style={{ color: 'var(--muted)', fontSize: 12, marginTop: 10 }}>
-          Sorting: click table headers. Open details: click any row (Esc closes modal).
+        <div style={{ color: 'var(--muted)', fontSize: 12, marginTop: 10, opacity: 0.8 }}>
+          Click table headers to sort. Click any row to view details (Esc to close).
         </div>
       </div>
 
@@ -181,8 +182,8 @@ export function Features(props: {
           </table>
         </div>
 
-        <div style={{ color: 'var(--muted)', fontSize: 12, marginTop: 8 }}>
-          Showing up to 800 rows for performance. Refine filters to narrow down.
+        <div style={{ color: 'var(--muted)', fontSize: 12, marginTop: 10, opacity: 0.8 }}>
+          Showing up to 800 rows. Refine filters to narrow results.
         </div>
       </div>
     </div>

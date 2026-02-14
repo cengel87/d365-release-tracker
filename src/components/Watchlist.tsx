@@ -82,7 +82,7 @@ export function Watchlist(props: {
         <div className="row" style={{ justifyContent: 'space-between' }}>
           <div>
             <h3 style={{ margin: 0 }}>Team watchlist</h3>
-            <div style={{ color: 'var(--muted)', fontSize: 12 }}>Shared across the team (Supabase)</div>
+            <div style={{ color: 'var(--muted)', fontSize: 12, marginTop: 4 }}>Shared across the team via Supabase</div>
           </div>
           <Pill kind="info">{sortedJoined.length} tracked</Pill>
         </div>
@@ -124,8 +124,8 @@ export function Watchlist(props: {
           </table>
         </div>
 
-        <div className="card" style={{ marginTop: 12 }}>
-          <h3>Export (CSV)</h3>
+        <div className="card" style={{ marginTop: 14 }}>
+          <h3>Export</h3>
           <button className="btn secondary" onClick={() => {
             const rows = sortedJoined.map(({ w, f }) => ({
               impact: w.impact,
