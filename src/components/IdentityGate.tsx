@@ -4,6 +4,11 @@ import { useIdentity } from '../hooks/useIdentity'
 export function IdentityGate({ children }: { children: (ident: ReturnType<typeof useIdentity>) => React.ReactNode }) {
   const ident = useIdentity()
 
+  // Wait for the auth-user check to finish before deciding what to show
+  if (!ident.resolved) {
+    return null
+  }
+
   if (ident.editing) {
     return (
       <div className="container">
