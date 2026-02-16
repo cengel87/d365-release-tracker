@@ -36,6 +36,9 @@ export const api = {
   listNotes: async (release_plan_id: string): Promise<Note[]> =>
     j(`/.netlify/functions/notes?release_plan_id=${encodeURIComponent(release_plan_id)}`),
 
+  listNotesBulk: async (ids: string[]): Promise<Note[]> =>
+    ids.length === 0 ? [] : j(`/.netlify/functions/notes?ids=${ids.map(encodeURIComponent).join(',')}`),
+
   addNote: async (payload: { release_plan_id: string; author_name: string; content: string }) =>
     j('/.netlify/functions/notes', { method: 'POST', body: JSON.stringify(payload) }),
 
