@@ -511,12 +511,14 @@ textarea{
   color: var(--accent);
 }
 .pill.muted{
-  color: var(--muted);
+  border-color: rgba(148,163,184,0.30);
+  background: rgba(148,163,184,0.08);
+  color: #94a3b8;
 }
 .pill.ea{
-  border-color: rgba(194, 56, 248, 0.35);
-  background: var(--accent-dim);
-  color: rgb(136, 38, 175);
+  border-color: rgba(167,139,250,0.35);
+  background: rgba(167,139,250,0.10);
+  color: #c084fc;
 }
 
 /* ── Code / separators ── */
