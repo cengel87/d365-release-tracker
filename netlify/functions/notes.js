@@ -8,6 +8,21 @@ exports.handler = async (event) => {
     if (event.httpMethod === 'GET') {
       const qs = event.queryStringParameters || {}
       const release_plan_id = qs.release_plan_id
+      const ids = qs.ids // comma-separated list for bulk fetch
+
+      if (ids) {
+        // Bulk fetch: return notes for multiple release_plan_ids
+        const idList = ids.split(',').map(s => s.trim()).filter(Boolean)
+        if (idList.length === 0) return bad(400, 'Empty ids list')
+        const { data, error } = await sb
+          .from('notes')
+          .select('*')
+          .in('release_plan_id', idList)
+          .order('created_at', { ascending: false })
+        if (error) throw error
+        return ok(data || [])
+      }
+
       if (!release_plan_id) return bad(400, 'Missing release_plan_id')
       const { data, error } = await sb
         .from('notes')

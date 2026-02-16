@@ -1,6 +1,7 @@
 import React, { useMemo, useState } from 'react'
-import type { EnrichedFeature, WatchlistItem } from '../types'
+import type { EnrichedFeature, Note, WatchlistItem } from '../types'
 import { fmtDate, statusEmoji } from '../logic'
+import { api } from '../api'
 import { Pill } from './Pill'
 import { toCsv, download } from '../utils/csv'
 
@@ -20,6 +21,7 @@ export function Watchlist(props: {
       .filter(x => Boolean(x.f))
   }, [all, watch])
 
+  const [exporting, setExporting] = useState(false)
   const [sort, setSort] = useState<{ key: SortKey; dir: 'asc' | 'desc' }>(() => ({
     key: 'ga',
     dir: 'asc',
@@ -129,25 +131,45 @@ export function Watchlist(props: {
 
         <div className="card" style={{ marginTop: 14 }}>
           <h3>Export</h3>
-          <button className="btn secondary" onClick={() => {
-            const rows = sortedJoined.map(({ w, f }) => ({
-              impact: w.impact,
-              flagged_for: w.flagged_for || '',
-              status: f!.status,
-              product: f!['Product name'],
-              feature: f!['Feature name'],
-              wave: f!.releaseWave ?? '',
-              early_access: fmtDate(f!.earlyAccessDate),
-              preview: fmtDate(f!.previewDate),
-              ga: fmtDate(f!.gaDate),
-              enabled_for: String(f!['Enabled for'] ?? ''),
-              release_plan_id: w.release_plan_id,
-              ms_link: f!.msLink ?? '',
-            }))
-            const csv = toCsv(rows)
-            download(`watchlist_${new Date().toISOString().slice(0, 10)}.csv`, csv)
+          <button className="btn secondary" disabled={exporting} onClick={async () => {
+            setExporting(true)
+            try {
+              const ids = sortedJoined.map(({ w }) => w.release_plan_id)
+              const allNotes = ids.length > 0 ? await api.listNotesBulk(ids) : []
+              const notesByFeature = new Map<string, Note[]>()
+              for (const n of allNotes) {
+                const arr = notesByFeature.get(n.release_plan_id) ?? []
+                arr.push(n)
+                notesByFeature.set(n.release_plan_id, arr)
+              }
+              const rows = sortedJoined.map(({ w, f }) => {
+                const notes = notesByFeature.get(w.release_plan_id) ?? []
+                const notesStr = notes.map(n => `[${n.author_name}] ${n.content}`).join(' | ')
+                return {
+                  impact: w.impact,
+                  flagged_for: w.flagged_for || '',
+                  status: f!.status,
+                  product: f!['Product name'],
+                  feature: f!['Feature name'],
+                  wave: f!.releaseWave ?? '',
+                  early_access: fmtDate(f!.earlyAccessDate),
+                  preview: fmtDate(f!.previewDate),
+                  ga: fmtDate(f!.gaDate),
+                  enabled_for: String(f!['Enabled for'] ?? ''),
+                  notes: notesStr,
+                  release_plan_id: w.release_plan_id,
+                  ms_link: f!.msLink ?? '',
+                }
+              })
+              const csv = toCsv(rows)
+              download(`watchlist_${new Date().toISOString().slice(0, 10)}.csv`, csv)
+            } catch (e) {
+              console.error('CSV export failed', e)
+            } finally {
+              setExporting(false)
+            }
           }}>
-            Download watchlist CSV
+            {exporting ? 'Exporting…' : 'Download watchlist CSV'}
           </button>
         </div>
       </div>
