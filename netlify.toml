@@ -5,6 +5,11 @@
 [functions]
   directory = "netlify/functions"
 
+# Basic auth via edge function (set BASIC_AUTH_CREDENTIALS env var in Netlify dashboard)
+[[edge_functions]]
+  path = "/*"
+  function = "basic-auth"
+
 # SPA fallback
 [[redirects]]
   from = "/*"
