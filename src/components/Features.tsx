@@ -1,7 +1,13 @@
-import React, { useMemo } from 'react'
-import type { EnrichedFeature, WatchlistItem } from '../types'
-import { analysisStatusEmoji, fmtDate, statusEmoji } from '../logic'
+import React, { useMemo, useState } from 'react'
+import type { AnalysisStatus, EnrichedFeature, WatchlistItem } from '../types'
+import { analysisStatusEmoji, fmtDate, statusEmoji, statusShort } from '../logic'
 import { Pill } from './Pill'
+
+const ANALYSIS_RANK: Record<AnalysisStatus, number> = {
+  'In Progress': 0,
+  'Reviewed': 1,
+  'Not Applicable': 2,
+}
 
 export function Features(props: {
   filtered: EnrichedFeature[]
@@ -12,19 +18,21 @@ export function Features(props: {
   setFilters: (v: any) => void
   watchItems: WatchlistItem[]
   onOpenDetail: (id: string) => void
-  featureSort: { key: string; dir: 'asc' | 'desc' }
-  setFeatureSort: (v: { key: string; dir: 'asc' | 'desc' }) => void
 }) {
   const {
     filtered, products, waves, enablements,
     filters, setFilters, watchItems, onOpenDetail,
-    featureSort, setFeatureSort
   } = props
 
   const watchMap = useMemo(
     () => new Map(watchItems.map(w => [w.release_plan_id, w])),
     [watchItems]
   )
+
+  const [featureSort, setFeatureSort] = useState<{ key: string; dir: 'asc' | 'desc' }>({
+    key: 'ga', dir: 'asc',
+  })
+  const [hideCompleted, setHideCompleted] = useState(false)
 
   const toggleSort = (key: string) => {
     if (featureSort.key === key) {
@@ -38,6 +46,49 @@ export function Features(props: {
     if (featureSort.key !== key) return ''
     return featureSort.dir === 'asc' ? ' ▲' : ' ▼'
   }
+
+  const sortedFiltered = useMemo(() => {
+    let arr = [...filtered]
+
+    // Hide Reviewed / Not Applicable watched items when toggle is on
+    if (hideCompleted) {
+      arr = arr.filter(f => {
+        const w = watchMap.get(f['Release Plan ID'])
+        if (!w) return true // unwatched — always show
+        return w.analysis_status !== 'Reviewed' && w.analysis_status !== 'Not Applicable'
+      })
+    }
+
+    const dir = featureSort.dir === 'asc' ? 1 : -1
+    const k = featureSort.key
+
+    const getVal = (f: EnrichedFeature): string | number => {
+      switch (k) {
+        case 'analysisStatus': {
+          const w = watchMap.get(f['Release Plan ID'])
+          // Unwatched features go last
+          if (!w) return 99
+          return ANALYSIS_RANK[w.analysis_status ?? 'In Progress'] ?? 99
+        }
+        case 'status': return f.status ?? ''
+        case 'product': return f['Product name'] ?? ''
+        case 'feature': return f['Feature name'] ?? ''
+        case 'wave': return f.releaseWave ?? ''
+        case 'ga': return f.gaDate ? f.gaDate.getTime() : Number.POSITIVE_INFINITY
+        case 'enablement': return String(f['Enabled for'] ?? '')
+        default: return ''
+      }
+    }
+
+    arr.sort((a, b) => {
+      const av = getVal(a) as any
+      const bv = getVal(b) as any
+      if (typeof av === 'number' && typeof bv === 'number') return (av - bv) * dir
+      return String(av).localeCompare(String(bv), undefined, { numeric: true, sensitivity: 'base' }) * dir
+    })
+
+    return arr
+  }, [filtered, featureSort, watchMap, hideCompleted])
 
   return (
     <div className="grid">
@@ -101,9 +152,7 @@ export function Features(props: {
                   onChange={(e) =>
                     setFilters({
                       ...filters,
-                      gaStart: e.target.value
-                        ? new Date(e.target.value + 'T00:00:00')
-                        : null,
+                      gaStart: e.target.value ? new Date(e.target.value + 'T00:00:00') : null,
                     })
                   }
                   title="GA start date"
@@ -116,9 +165,7 @@ export function Features(props: {
                   onChange={(e) =>
                     setFilters({
                       ...filters,
-                      gaEnd: e.target.value
-                        ? new Date(e.target.value + 'T00:00:00')
-                        : null,
+                      gaEnd: e.target.value ? new Date(e.target.value + 'T00:00:00') : null,
                     })
                   }
                   title="GA end date"
@@ -129,10 +176,20 @@ export function Features(props: {
           </div>
 
           <div className="row">
-            <Pill kind="muted">{filtered.length.toLocaleString()} features</Pill>
+            <Pill kind="muted">{sortedFiltered.length.toLocaleString()} features</Pill>
+            <span
+              className={`pill btn${hideCompleted ? ' active' : ''}`}
+              onClick={() => setHideCompleted(v => !v)}
+              title="Hide watchlist items marked Reviewed or Not Applicable"
+            >
+              ✅🚫 Hide done
+            </span>
             <button
               className="btn secondary small"
-              onClick={() => setFilters({ search: '', products: [], statuses: [], waves: [], enabledFor: [], gaStart: null, gaEnd: null })}
+              onClick={() => {
+                setFilters({ search: '', products: [], statuses: [], waves: [], enabledFor: [], gaStart: null, gaEnd: null })
+                setHideCompleted(false)
+              }}
             >
               Clear filters
             </button>
@@ -151,7 +208,7 @@ export function Features(props: {
           <table className="features-table">
             <thead>
               <tr>
-                <th title="Analysis status">🔍</th>
+                <th className="sortable" title="Analysis status" onClick={() => toggleSort('analysisStatus')}>🔍{arrow('analysisStatus')}</th>
                 <th className="sortable" onClick={() => toggleSort('status')}>Status{arrow('status')}</th>
                 <th className="sortable" onClick={() => toggleSort('product')}>Product{arrow('product')}</th>
                 <th className="sortable" onClick={() => toggleSort('feature')}>Feature{arrow('feature')}</th>
@@ -162,7 +219,7 @@ export function Features(props: {
             </thead>
 
             <tbody>
-              {filtered.slice(0, 800).map(f => {
+              {sortedFiltered.slice(0, 800).map(f => {
                 const id = f['Release Plan ID']
                 const watchItem = watchMap.get(id)
                 const analysisStatus = watchItem?.analysis_status ?? null
@@ -174,8 +231,8 @@ export function Features(props: {
                     onClick={() => onOpenDetail(id)}
                     style={{ cursor: 'pointer' }}
                   >
-                    <td title={analysisStatus ? `${analysisStatus}` : ''}>{analysisStatus ? analysisStatusEmoji(analysisStatus) : ''}</td>
-                    <td title={`${f.status}`}>{statusEmoji(f.status)}</td>
+                    <td title={analysisStatus ?? ''}>{analysisStatus ? analysisStatusEmoji(analysisStatus) : ''}</td>
+                    <td title={`${f.status}`}>{statusEmoji(f.status)} {statusShort(f.status)}</td>
                     <td title={String(f['Product name'] ?? '')}>{f['Product name']}</td>
                     <td title={String(f['Feature name'] ?? '')}>{f['Feature name']}</td>
                     <td title={String(f.releaseWave ?? 'TBD')}>{f.releaseWave ?? 'TBD'}</td>
