@@ -27,12 +27,15 @@ export type EnrichedFeature = ReleaseFeature & {
 
 export type FlaggedFor = 'Business' | 'Tech Team' | 'Both' | ''
 
+export type AnalysisStatus = 'Not Applicable' | 'In Progress' | 'Reviewed'
+
 export type WatchlistItem = {
   release_plan_id: string
   feature_name: string
   product_name: string
   impact: '🔴 High' | '🟡 Medium' | '🟢 Low' | '🚩 To Review'
   flagged_for: FlaggedFor
+  analysis_status: AnalysisStatus
   added_at: string
 }
 

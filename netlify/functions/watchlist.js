@@ -25,6 +25,7 @@ exports.handler = async (event) => {
           feature_name: String(feature_name),
           product_name: String(product_name),
           impact: '🚩 To Review',
+        analysis_status: 'In Progress',
         }, { onConflict: 'release_plan_id' })
       if (error) throw error
       return ok({ ok: true })

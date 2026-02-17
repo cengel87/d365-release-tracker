@@ -383,13 +383,14 @@ textarea{
 
 .table-wrap th,
 .table-wrap td{
-  padding: 10px 12px;
-  border-bottom: 1px solid var(--border);
+  padding: 11px 14px;
+  border-bottom: 1px solid var(--border-strong);
   vertical-align: middle;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
   font-size: 13px;
+  line-height: 1.45;
 }
 
 .table-wrap th{
@@ -444,41 +445,43 @@ textarea{
 
 /* ── Features table column sizing (7 cols) ── */
 .features-table th:nth-child(1),
-.features-table td:nth-child(1){ width: 44px; }
+.features-table td:nth-child(1){ width: 44px; text-align: center; text-overflow: clip; }    /* Analysis (emoji) */
 .features-table th:nth-child(2),
-.features-table td:nth-child(2){ width: 80px; }
+.features-table td:nth-child(2){ width: 80px; }    /* Status */
 .features-table th:nth-child(3),
-.features-table td:nth-child(3){ width: 260px; }
+.features-table td:nth-child(3){ width: 260px; }   /* Product */
 .features-table th:nth-child(4),
-.features-table td:nth-child(4){ width: 520px; }
+.features-table td:nth-child(4){ width: 528px; }   /* Feature */
 .features-table th:nth-child(5),
-.features-table td:nth-child(5){ width: 160px; }
+.features-table td:nth-child(5){ width: 160px; }   /* Wave */
 .features-table th:nth-child(6),
-.features-table td:nth-child(6){ width: 110px; }
+.features-table td:nth-child(6){ width: 110px; }   /* GA */
 .features-table th:nth-child(7),
-.features-table td:nth-child(7){ width: 420px; }
+.features-table td:nth-child(7){ width: 420px; }   /* Enablement */
 
-/* ── Watchlist table column sizing (8 cols) ── */
+/* ── Watchlist table column sizing (9 cols) ── */
 .watchlist-table th:nth-child(1),
-.watchlist-table td:nth-child(1){ width: 90px; }   /* Impact */
+.watchlist-table td:nth-child(1){ width: 52px; text-align: center; text-overflow: clip; }   /* Analysis (emoji) */
 .watchlist-table th:nth-child(2),
-.watchlist-table td:nth-child(2){ width: 90px; }   /* Flagged for */
+.watchlist-table td:nth-child(2){ width: 110px; }  /* Impact */
 .watchlist-table th:nth-child(3),
-.watchlist-table td:nth-child(3){ width: 70px; }   /* Status */
+.watchlist-table td:nth-child(3){ width: 110px; }  /* Flagged for */
 .watchlist-table th:nth-child(4),
-.watchlist-table td:nth-child(4){ width: 200px; }  /* Product */
+.watchlist-table td:nth-child(4){ width: 72px; }   /* Status (emoji) */
 .watchlist-table th:nth-child(5),
-.watchlist-table td:nth-child(5){ width: 400px; }  /* Feature */
+.watchlist-table td:nth-child(5){ width: 220px; }  /* Product */
 .watchlist-table th:nth-child(6),
-.watchlist-table td:nth-child(6){ width: 130px; }  /* Wave */
+.watchlist-table td:nth-child(6){ width: 420px; }  /* Feature */
 .watchlist-table th:nth-child(7),
-.watchlist-table td:nth-child(7){ width: 100px; }  /* GA */
+.watchlist-table td:nth-child(7){ width: 150px; }  /* Wave */
 .watchlist-table th:nth-child(8),
-.watchlist-table td:nth-child(8){ width: 300px; }  /* Enabled for */
+.watchlist-table td:nth-child(8){ width: 106px; }  /* GA */
+.watchlist-table th:nth-child(9),
+.watchlist-table td:nth-child(9){ width: 260px; }  /* Enabled for */
 
 /* Full-width tables */
 .fullwidth-table .table-wrap table{
-  min-width: 1200px;
+  min-width: 1500px;
 }
 
 /* ── Pills ── */
@@ -519,6 +522,20 @@ textarea{
   border-color: rgba(167,139,250,0.35);
   background: rgba(167,139,250,0.10);
   color: #c084fc;
+}
+
+/* Clickable filter pills */
+.pill.btn {
+  cursor: pointer;
+  user-select: none;
+}
+.pill.btn:hover {
+  filter: brightness(1.15);
+}
+.pill.btn.active {
+  border-color: var(--accent);
+  background: var(--accent-dim);
+  color: var(--accent);
 }
 
 /* ── Code / separators ── */
