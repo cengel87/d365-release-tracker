@@ -44,10 +44,6 @@ export default function App() {
     return enrich(releaseQ.data.results)
   }, [releaseQ.data])
 
-  const [featureSort, setFeatureSort] = useState<{ key: string; dir: 'asc' | 'desc' }>(() => ({
-    key: 'ga', dir: 'asc'
-  }))
-
   const [filters, setFilters] = useState(() => ({
     search: '',
     products: [] as string[],
@@ -59,34 +55,6 @@ export default function App() {
   }))
 
   const filtered = useMemo(() => applyFilters(all, filters), [all, filters])
-
-  const sortedFiltered = useMemo(() => {
-    const arr = [...filtered]
-    const dir = featureSort.dir === 'asc' ? 1 : -1
-    const k = featureSort.key
-
-    const getVal = (f: EnrichedFeature) => {
-      switch (k) {
-        case 'status': return f.status ?? ''
-        case 'product': return f['Product name'] ?? ''
-        case 'feature': return f['Feature name'] ?? ''
-        case 'wave': return f.releaseWave ?? ''
-        case 'ga': return f.gaDate ? f.gaDate.getTime() : Number.POSITIVE_INFINITY // TBD last
-        case 'enablement': return String(f['Enabled for'] ?? '')
-        default: return ''
-      }
-    }
-
-    arr.sort((a, b) => {
-      const av = getVal(a) as any
-      const bv = getVal(b) as any
-
-      if (typeof av === 'number' && typeof bv === 'number') return (av - bv) * dir
-      return String(av).localeCompare(String(bv), undefined, { numeric: true, sensitivity: 'base' }) * dir
-    })
-
-    return arr
-  }, [filtered, featureSort])
 
   const watchIds = useMemo(() => new Set((watchQ.data ?? []).map(w => w.release_plan_id)), [watchQ.data])
 
@@ -280,7 +248,7 @@ export default function App() {
 
               {tab === 'Features' && (
                 <Features
-                  filtered={sortedFiltered}
+                  filtered={filtered}
                   products={products}
                   waves={waves}
                   enablements={enablements}
@@ -288,8 +256,6 @@ export default function App() {
                   setFilters={setFilters}
                   watchItems={watchQ.data ?? []}
                   onOpenDetail={(id) => openDetail(id, 'feature')}
-                  featureSort={featureSort}
-                  setFeatureSort={setFeatureSort}
                 />
               )}
 
@@ -301,7 +267,7 @@ export default function App() {
                 />
               )}
 
-              {tab === 'Changes' && <Changes watchIds={watchIds} />}
+              {tab === 'Changes' && <Changes watchIds={watchIds} watchItems={watchQ.data ?? []} />}
 
               {tab === 'Help' && <Help fetchedAt={releaseQ.data.fetchedAt} sourceUrl={releaseQ.data.sourceUrl} />}
             </>

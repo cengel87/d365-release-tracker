@@ -1,6 +1,6 @@
 import React, { useMemo, useState } from 'react'
 import type { AnalysisStatus, EnrichedFeature, Note, WatchlistItem } from '../types'
-import { analysisStatusEmoji, fmtDate, statusEmoji } from '../logic'
+import { analysisStatusEmoji, fmtDate, statusEmoji, statusShort } from '../logic'
 import { api } from '../api'
 import { Pill } from './Pill'
 import { toCsv, download } from '../utils/csv'
@@ -166,7 +166,7 @@ export function Watchlist(props: {
                     <td title={w.analysis_status ?? 'In Progress'}>{analysisStatusEmoji(w.analysis_status ?? 'In Progress')}</td>
                     <td>{w.impact}</td>
                     <td>{w.flagged_for || '—'}</td>
-                    <td>{statusEmoji(ff.status)}</td>
+                    <td>{statusEmoji(ff.status)} {statusShort(ff.status)}</td>
                     <td>{ff['Product name']}</td>
                     <td>{ff['Feature name']}</td>
                     <td>{ff.releaseWave ?? 'TBD'}</td>

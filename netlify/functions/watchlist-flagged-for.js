@@ -1,6 +1,6 @@
 const { ok, bad, corsHeaders, getSupabaseAdmin } = require('./_util')
 
-const FLAGGED_FOR = new Set(['Business', 'Tech Team', 'Both', ''])
+const FLAGGED_FOR = new Set(['Business', 'Tech Team', 'Both', 'BTA Only', ''])
 
 exports.handler = async (event) => {
   if (event.httpMethod === 'OPTIONS') return { statusCode: 200, headers: corsHeaders(), body: '' }

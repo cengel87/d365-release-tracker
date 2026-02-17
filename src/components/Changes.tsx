@@ -1,7 +1,8 @@
 import React, { useMemo, useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { api } from '../api'
-import type { ChangeLogItem } from '../types'
+import type { ChangeLogItem, WatchlistItem } from '../types'
+import { analysisStatusEmoji } from '../logic'
 import { Pill } from './Pill'
 import { labelChangeType } from '../utils/changes'
 import { buildMsVerifyLink } from '../utils/msLinks'
@@ -18,7 +19,8 @@ type FeatureChangeGroup = {
 
 type SortKey = 'detected_at' | 'change_type' | 'product_name' | 'feature_name' | 'changes'
 
-export function Changes({ watchIds }: { watchIds: Set<string> }) {
+export function Changes({ watchIds, watchItems }: { watchIds: Set<string>; watchItems: WatchlistItem[] }) {
+  const watchMap = useMemo(() => new Map(watchItems.map(w => [w.release_plan_id, w])), [watchItems])
   const [days, setDays] = useState(14)
   const q = useQuery({ queryKey: ['changes', days], queryFn: () => api.listChanges(days) })
 
@@ -154,7 +156,7 @@ export function Changes({ watchIds }: { watchIds: Set<string> }) {
                   <th className="sortable" style={{ width: 150 }} onClick={() => toggleSort('detected_at')}>Detected{arrow('detected_at')}</th>
                   <th className="sortable" style={{ width: 220 }} onClick={() => toggleSort('product_name')}>Product{arrow('product_name')}</th>
                   <th className="sortable" style={{ width: 360 }} onClick={() => toggleSort('feature_name')}>Feature{arrow('feature_name')}</th>
-                  <th style={{ width: 40 }}>👁️</th>
+                  <th style={{ width: 40, textAlign: 'center' }} title="Analysis status">🔍</th>
                   <th className="sortable" style={{ width: 90 }} onClick={() => toggleSort('changes')}>Changes{arrow('changes')}</th>
                   <th className="sortable" style={{ width: 220 }} onClick={() => toggleSort('change_type')}>Types{arrow('change_type')}</th>
                   <th style={{ width: 110 }}>Verify</th>
@@ -166,6 +168,7 @@ export function Changes({ watchIds }: { watchIds: Set<string> }) {
                   const isOpen = expanded.has(g.release_plan_id)
                   const when = g.latest_detected.slice(0, 16).replace('T', ' ')
                   const url = buildMsVerifyLink(g.product_name, g.feature_name)
+                  const watchItem = watchMap.get(g.release_plan_id)
                   const isWatched = watchIds.has(g.release_plan_id)
 
                   return (
@@ -178,7 +181,9 @@ export function Changes({ watchIds }: { watchIds: Set<string> }) {
                         <td title={g.latest_detected}>{when}</td>
                         <td title={g.product_name}>{g.product_name}</td>
                         <td title={g.feature_name}><b>{g.feature_name}</b></td>
-                        <td>{isWatched ? '👁️' : ''}</td>
+                        <td style={{ textAlign: 'center' }} title={watchItem?.analysis_status ?? ''}>
+                          {watchItem ? analysisStatusEmoji(watchItem.analysis_status ?? 'In Progress') : ''}
+                        </td>
                         <td>
                           <span className="count-badge">
                             {g.changes.length} change{g.changes.length !== 1 ? 's' : ''}

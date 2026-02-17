@@ -8,8 +8,19 @@ const STATUS_EMOJI: Record<EnrichedFeature['status'], string> = {
   'Planned': '⚪',
 }
 
+const STATUS_SHORT: Record<EnrichedFeature['status'], string> = {
+  'Generally Available': 'GA',
+  'Public Preview': 'PP',
+  'Early Access': 'EA',
+  'Planned': 'PL',
+}
+
 export function statusEmoji(s: EnrichedFeature['status']) {
   return STATUS_EMOJI[s] ?? '⚪'
+}
+
+export function statusShort(s: EnrichedFeature['status']) {
+  return STATUS_SHORT[s] ?? ''
 }
 
 const ANALYSIS_STATUS_EMOJI: Record<AnalysisStatus, string> = {

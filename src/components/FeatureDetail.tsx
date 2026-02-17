@@ -17,6 +17,7 @@ const FLAGGED_FOR_OPTIONS: { value: FlaggedFor; label: string }[] = [
   { value: 'Business', label: 'Business' },
   { value: 'Tech Team', label: 'Tech Team' },
   { value: 'Both', label: 'Both' },
+  { value: 'BTA Only', label: 'BTA Only' },
 ]
 
 export function FeatureDetail({ feature, watched, onToggleWatch, showImpact, showNotes, identityName, impact, onSetImpact, flaggedFor, onSetFlaggedFor, analysisStatus, onSetAnalysisStatus, hideHeader }: {

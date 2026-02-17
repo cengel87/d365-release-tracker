@@ -25,7 +25,7 @@ export type EnrichedFeature = ReleaseFeature & {
   msLink: string | null
 }
 
-export type FlaggedFor = 'Business' | 'Tech Team' | 'Both' | ''
+export type FlaggedFor = 'Business' | 'Tech Team' | 'Both' | 'BTA Only' | ''
 
 export type AnalysisStatus = 'Not Applicable' | 'In Progress' | 'Reviewed'
 
