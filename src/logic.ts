@@ -1,5 +1,5 @@
 import { differenceInCalendarDays, format } from 'date-fns'
-import type { EnrichedFeature, ReleaseFeature } from './types'
+import type { AnalysisStatus, EnrichedFeature, ReleaseFeature } from './types'
 
 const STATUS_EMOJI: Record<EnrichedFeature['status'], string> = {
   'Generally Available': '🟢',
@@ -10,6 +10,16 @@ const STATUS_EMOJI: Record<EnrichedFeature['status'], string> = {
 
 export function statusEmoji(s: EnrichedFeature['status']) {
   return STATUS_EMOJI[s] ?? '⚪'
+}
+
+const ANALYSIS_STATUS_EMOJI: Record<AnalysisStatus, string> = {
+  'Not Applicable': '🚫',
+  'In Progress': '🔶',
+  'Reviewed': '✅',
+}
+
+export function analysisStatusEmoji(s: AnalysisStatus): string {
+  return ANALYSIS_STATUS_EMOJI[s] ?? '🔶'
 }
 
 function parseDate(v: unknown): Date | null {

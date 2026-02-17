@@ -1,7 +1,7 @@
 import React, { useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { api } from '../api'
-import type { EnrichedFeature, FlaggedFor, WatchlistItem } from '../types'
+import type { AnalysisStatus, EnrichedFeature, FlaggedFor, WatchlistItem } from '../types'
 import { fmtDate, statusEmoji } from '../logic'
 import { stripHtml } from '../utils/text'
 import { Pill } from './Pill'
@@ -10,6 +10,8 @@ const IMPACT_OPTIONS: WatchlistItem['impact'][] = ['🔴 High', '🟡 Medium', '
   (v, i, a) => a.indexOf(v) === i
 ) as any
 
+const ANALYSIS_STATUS_OPTIONS: AnalysisStatus[] = ['In Progress', 'Reviewed', 'Not Applicable']
+
 const FLAGGED_FOR_OPTIONS: { value: FlaggedFor; label: string }[] = [
   { value: '', label: 'Not set' },
   { value: 'Business', label: 'Business' },
@@ -17,16 +19,19 @@ const FLAGGED_FOR_OPTIONS: { value: FlaggedFor; label: string }[] = [
   { value: 'Both', label: 'Both' },
 ]
 
-export function FeatureDetail({ feature, watched, onToggleWatch, showImpact, identityName, impact, onSetImpact, flaggedFor, onSetFlaggedFor, hideHeader }: {
+export function FeatureDetail({ feature, watched, onToggleWatch, showImpact, showNotes, identityName, impact, onSetImpact, flaggedFor, onSetFlaggedFor, analysisStatus, onSetAnalysisStatus, hideHeader }: {
   feature: EnrichedFeature
   watched: boolean
   onToggleWatch: () => void
   showImpact: boolean
+  showNotes: boolean
   identityName: string
   impact?: WatchlistItem['impact']
   onSetImpact?: (impact: WatchlistItem['impact']) => void
   flaggedFor?: FlaggedFor
   onSetFlaggedFor?: (flaggedFor: FlaggedFor) => void
+  analysisStatus?: AnalysisStatus
+  onSetAnalysisStatus?: (status: AnalysisStatus) => void
   hideHeader?: boolean
 }) {
   const id = feature['Release Plan ID']
@@ -69,7 +74,7 @@ export function FeatureDetail({ feature, watched, onToggleWatch, showImpact, ide
       )}
 
       {showImpact && onSetImpact && (
-        <div className="row" style={{ marginTop: 10, gap: 16 }}>
+        <div className="row" style={{ marginTop: 10, gap: 16, flexWrap: 'wrap' }}>
           <div className="row">
             <Pill kind="info">Impact</Pill>
             <select value={impact ?? '🚩 To Review'} onChange={(e) => onSetImpact(e.target.value as any)}>
@@ -81,6 +86,14 @@ export function FeatureDetail({ feature, watched, onToggleWatch, showImpact, ide
               <Pill kind="info">Flagged for</Pill>
               <select value={flaggedFor ?? ''} onChange={(e) => onSetFlaggedFor(e.target.value as FlaggedFor)}>
                 {FLAGGED_FOR_OPTIONS.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
+              </select>
+            </div>
+          )}
+          {onSetAnalysisStatus && (
+            <div className="row">
+              <Pill kind="info">Analysis</Pill>
+              <select value={analysisStatus ?? 'In Progress'} onChange={(e) => onSetAnalysisStatus(e.target.value as AnalysisStatus)}>
+                {ANALYSIS_STATUS_OPTIONS.map(o => <option key={o} value={o}>{o}</option>)}
               </select>
             </div>
           )}
@@ -104,41 +117,43 @@ export function FeatureDetail({ feature, watched, onToggleWatch, showImpact, ide
         </div>
       </div>
 
-      <div className="card" style={{ marginTop: 14 }}>
-        <h3>Team notes</h3>
-        {notesQ.isLoading && <div style={{ color: 'var(--muted)', fontSize: 13 }}>Loading notes…</div>}
-        {notesQ.isError && <div style={{ color: 'var(--danger)', fontSize: 13 }}>Failed to load notes.</div>}
-        {notesQ.data && notesQ.data.length === 0 && <div style={{ color: 'var(--muted)', fontSize: 13 }}>No notes yet.</div>}
-        {notesQ.data && notesQ.data.length > 0 && (
-          <div style={{ display: 'grid', gap: 8 }}>
-            {notesQ.data.slice(0, 10).map(n => (
-              <div key={n.id} className="card" style={{ padding: 12 }}>
-                <div style={{ fontSize: 12, color: 'var(--muted)' }}>
-                  <b style={{ color: 'var(--text-secondary)' }}>{n.author_name}</b> · {n.created_at.slice(0, 10)}
+      {showNotes && (
+        <div className="card" style={{ marginTop: 14 }}>
+          <h3>Team notes</h3>
+          {notesQ.isLoading && <div style={{ color: 'var(--muted)', fontSize: 13 }}>Loading notes…</div>}
+          {notesQ.isError && <div style={{ color: 'var(--danger)', fontSize: 13 }}>Failed to load notes.</div>}
+          {notesQ.data && notesQ.data.length === 0 && <div style={{ color: 'var(--muted)', fontSize: 13 }}>No notes yet.</div>}
+          {notesQ.data && notesQ.data.length > 0 && (
+            <div style={{ display: 'grid', gap: 8 }}>
+              {notesQ.data.slice(0, 10).map(n => (
+                <div key={n.id} className="card" style={{ padding: 12 }}>
+                  <div style={{ fontSize: 12, color: 'var(--muted)' }}>
+                    <b style={{ color: 'var(--text-secondary)' }}>{n.author_name}</b> · {n.created_at.slice(0, 10)}
+                  </div>
+                  <div style={{ marginTop: 6, whiteSpace: 'pre-wrap', color: 'var(--text-secondary)', fontSize: 13, lineHeight: 1.5 }}>{n.content}</div>
                 </div>
-                <div style={{ marginTop: 6, whiteSpace: 'pre-wrap', color: 'var(--text-secondary)', fontSize: 13, lineHeight: 1.5 }}>{n.content}</div>
-              </div>
-            ))}
-          </div>
-        )}
+              ))}
+            </div>
+          )}
 
-        <div style={{ marginTop: 12 }}>
-          <textarea value={note} onChange={e => setNote(e.target.value)} placeholder="Add a note… (keep it actionable)" />
-          <div className="row" style={{ justifyContent: 'space-between', marginTop: 8 }}>
-            <span className="badge">Posting as: {identityName || 'Guest'}</span>
-            <button
-              className="btn"
-              disabled={!note.trim() || addNoteMut.isPending}
-              onClick={() => {
-                addNoteMut.mutate({ release_plan_id: id, author_name: identityName || 'Guest', content: note.trim() })
-                setNote('')
-              }}
-            >
-              {addNoteMut.isPending ? 'Posting…' : 'Post note'}
-            </button>
+          <div style={{ marginTop: 12 }}>
+            <textarea value={note} onChange={e => setNote(e.target.value)} placeholder="Add a note… (keep it actionable)" />
+            <div className="row" style={{ justifyContent: 'space-between', marginTop: 8 }}>
+              <span className="badge">Posting as: {identityName || 'Guest'}</span>
+              <button
+                className="btn"
+                disabled={!note.trim() || addNoteMut.isPending}
+                onClick={() => {
+                  addNoteMut.mutate({ release_plan_id: id, author_name: identityName || 'Guest', content: note.trim() })
+                  setNote('')
+                }}
+              >
+                {addNoteMut.isPending ? 'Posting…' : 'Post note'}
+              </button>
+            </div>
           </div>
         </div>
-      </div>
+      )}
 
       <div className="card" style={{ marginTop: 14 }}>
         <h3>Raw JSON (Microsoft feed)</h3>

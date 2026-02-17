@@ -123,6 +123,10 @@ export default function App() {
     mutationFn: api.setFlaggedFor,
     onSuccess: () => qc.invalidateQueries({ queryKey: ['watchlist'] }),
   })
+  const setAnalysisStatus = useMutation({
+    mutationFn: api.setAnalysisStatus,
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['watchlist'] }),
+  })
 
   const products = useMemo(() => Array.from(new Set(all.map(x => x['Product name']).filter(Boolean))).sort(), [all])
   const waves = useMemo(() => Array.from(new Set(all.map(x => x.releaseWave).filter(Boolean) as string[])).sort(), [all])
@@ -226,6 +230,11 @@ export default function App() {
     return (watchQ.data ?? []).find(w => w.release_plan_id === selectedId)?.flagged_for
   }, [watchQ.data, selectedId])
 
+  const selectedAnalysisStatus = useMemo(() => {
+    if (!selectedId) return undefined
+    return (watchQ.data ?? []).find(w => w.release_plan_id === selectedId)?.analysis_status
+  }, [watchQ.data, selectedId])
+
   function toggleSelectedWatch() {
     if (!selected) return
     const id = selected['Release Plan ID']
@@ -277,7 +286,7 @@ export default function App() {
                   enablements={enablements}
                   filters={filters}
                   setFilters={setFilters}
-                  watchIds={watchIds}
+                  watchItems={watchQ.data ?? []}
                   onOpenDetail={(id) => openDetail(id, 'feature')}
                   featureSort={featureSort}
                   setFeatureSort={setFeatureSort}
@@ -315,6 +324,11 @@ export default function App() {
             onSetFlaggedFor={(flagged_for) => {
               if (!selectedId) return
               setFlaggedFor.mutate({ release_plan_id: selectedId, flagged_for })
+            }}
+            analysisStatus={selectedAnalysisStatus}
+            onSetAnalysisStatus={(analysis_status) => {
+              if (!selectedId) return
+              setAnalysisStatus.mutate({ release_plan_id: selectedId, analysis_status })
             }}
           />
         </div>

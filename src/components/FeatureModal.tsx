@@ -1,5 +1,5 @@
 import React, { useEffect } from 'react'
-import type { EnrichedFeature, FlaggedFor, WatchlistItem } from '../types'
+import type { AnalysisStatus, EnrichedFeature, FlaggedFor, WatchlistItem } from '../types'
 import type { DetailMode } from '../App'
 import { fmtDate, statusEmoji } from '../logic'
 import { FeatureDetail } from './FeatureDetail'
@@ -16,8 +16,10 @@ export function FeatureModal(props: {
   onSetImpact?: (impact: WatchlistItem['impact']) => void
   flaggedFor?: FlaggedFor
   onSetFlaggedFor?: (flaggedFor: FlaggedFor) => void
+  analysisStatus?: AnalysisStatus
+  onSetAnalysisStatus?: (status: AnalysisStatus) => void
 }) {
-  const { open, onClose, feature, mode, watched, onToggleWatch, identityName, impact, onSetImpact, flaggedFor, onSetFlaggedFor } = props
+  const { open, onClose, feature, mode, watched, onToggleWatch, identityName, impact, onSetImpact, flaggedFor, onSetFlaggedFor, analysisStatus, onSetAnalysisStatus } = props
 
   // Escape to close + lock background scroll
   useEffect(() => {
@@ -77,11 +79,14 @@ export function FeatureModal(props: {
               watched={watched}
               onToggleWatch={onToggleWatch}
               showImpact={mode === 'watchlist'}
+              showNotes={mode === 'watchlist'}
               identityName={identityName}
               impact={impact ?? '🚩 To Review'}
               onSetImpact={onSetImpact}
               flaggedFor={flaggedFor ?? ''}
               onSetFlaggedFor={onSetFlaggedFor}
+              analysisStatus={analysisStatus ?? 'In Progress'}
+              onSetAnalysisStatus={onSetAnalysisStatus}
               hideHeader={true}
             />
           )}

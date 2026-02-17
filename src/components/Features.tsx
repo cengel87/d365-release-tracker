@@ -1,6 +1,6 @@
-import React from 'react'
-import type { EnrichedFeature } from '../types'
-import { fmtDate, statusEmoji } from '../logic'
+import React, { useMemo } from 'react'
+import type { EnrichedFeature, WatchlistItem } from '../types'
+import { analysisStatusEmoji, fmtDate, statusEmoji } from '../logic'
 import { Pill } from './Pill'
 
 export function Features(props: {
@@ -10,16 +10,21 @@ export function Features(props: {
   enablements: string[]
   filters: any
   setFilters: (v: any) => void
-  watchIds: Set<string>
+  watchItems: WatchlistItem[]
   onOpenDetail: (id: string) => void
   featureSort: { key: string; dir: 'asc' | 'desc' }
   setFeatureSort: (v: { key: string; dir: 'asc' | 'desc' }) => void
 }) {
   const {
     filtered, products, waves, enablements,
-    filters, setFilters, watchIds, onOpenDetail,
+    filters, setFilters, watchItems, onOpenDetail,
     featureSort, setFeatureSort
   } = props
+
+  const watchMap = useMemo(
+    () => new Map(watchItems.map(w => [w.release_plan_id, w])),
+    [watchItems]
+  )
 
   const toggleSort = (key: string) => {
     if (featureSort.key === key) {
@@ -146,7 +151,7 @@ export function Features(props: {
           <table className="features-table">
             <thead>
               <tr>
-                <th>👁️</th>
+                <th title="Analysis status">🔍</th>
                 <th className="sortable" onClick={() => toggleSort('status')}>Status{arrow('status')}</th>
                 <th className="sortable" onClick={() => toggleSort('product')}>Product{arrow('product')}</th>
                 <th className="sortable" onClick={() => toggleSort('feature')}>Feature{arrow('feature')}</th>
@@ -159,7 +164,8 @@ export function Features(props: {
             <tbody>
               {filtered.slice(0, 800).map(f => {
                 const id = f['Release Plan ID']
-                const watched = watchIds.has(id)
+                const watchItem = watchMap.get(id)
+                const analysisStatus = watchItem?.analysis_status ?? null
 
                 return (
                   <tr
@@ -168,7 +174,7 @@ export function Features(props: {
                     onClick={() => onOpenDetail(id)}
                     style={{ cursor: 'pointer' }}
                   >
-                    <td title={watched ? 'In watchlist' : ''}>{watched ? '👁️' : ''}</td>
+                    <td title={analysisStatus ? `${analysisStatus}` : ''}>{analysisStatus ? analysisStatusEmoji(analysisStatus) : ''}</td>
                     <td title={`${f.status}`}>{statusEmoji(f.status)}</td>
                     <td title={String(f['Product name'] ?? '')}>{f['Product name']}</td>
                     <td title={String(f['Feature name'] ?? '')}>{f['Feature name']}</td>
