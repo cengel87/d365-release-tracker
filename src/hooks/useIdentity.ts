@@ -5,15 +5,11 @@ const STORAGE_KEY = 'd365_name'
 export function useIdentity() {
   const [name, setName] = useState(() => localStorage.getItem(STORAGE_KEY) || '')
   const [editing, setEditing] = useState(() => !localStorage.getItem(STORAGE_KEY))
-  const [resolved, setResolved] = useState(() => !!localStorage.getItem(STORAGE_KEY))
 
-  // On mount, try to pick up the Basic Auth username from the edge function header.
-  // If found and no name is stored yet, auto-set it so the user skips the identity gate.
+  // On first visit (no stored name), try to pick up the Basic Auth username
+  // from the edge function response header and auto-set it.
   useEffect(() => {
-    if (localStorage.getItem(STORAGE_KEY)) {
-      setResolved(true)
-      return
-    }
+    if (localStorage.getItem(STORAGE_KEY)) return
 
     fetch(window.location.href, { method: 'HEAD' })
       .then((res) => {
@@ -27,7 +23,6 @@ export function useIdentity() {
       .catch(() => {
         // Ignore — user will see the manual name prompt
       })
-      .finally(() => setResolved(true))
   }, [])
 
   function save(n: string) {
@@ -37,5 +32,5 @@ export function useIdentity() {
     setEditing(false)
   }
 
-  return { name, editing, setEditing, save, resolved }
+  return { name, editing, setEditing, save }
 }
