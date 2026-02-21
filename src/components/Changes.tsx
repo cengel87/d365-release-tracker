@@ -30,6 +30,7 @@ export function Changes({ watchIds, watchItems }: { watchIds: Set<string>; watch
   }))
 
   const [expanded, setExpanded] = useState<Set<string>>(() => new Set())
+  const [changeTypeFilter, setChangeTypeFilter] = useState<string | null>(null)
 
   const toggleExpand = (id: string) => {
     setExpanded(prev => {
@@ -108,6 +109,12 @@ export function Changes({ watchIds, watchItems }: { watchIds: Set<string>; watch
     return arr
   }, [groups, sort])
 
+  // Filter groups by change type
+  const filtered = useMemo(() => {
+    if (!changeTypeFilter) return sorted
+    return sorted.filter(g => g.changeTypes.includes(changeTypeFilter))
+  }, [sorted, changeTypeFilter])
+
   // Summary stats
   const summary = useMemo(() => {
     const rawTotal = (q.data ?? []).length
@@ -128,8 +135,16 @@ export function Changes({ watchIds, watchItems }: { watchIds: Set<string>; watch
           <div className="row">
             <Pill kind="muted">{summary.featureCount.toLocaleString()} feature{summary.featureCount !== 1 ? 's' : ''}</Pill>
             <Pill kind="muted">{summary.rawTotal.toLocaleString()} change{summary.rawTotal !== 1 ? 's' : ''}</Pill>
+            <span
+              className={`pill btn${changeTypeFilter === null ? ' active' : ''}`}
+              onClick={() => setChangeTypeFilter(null)}
+            >All</span>
             {summary.top.map(([t, c]) => (
-              <Pill key={t} kind="info">{labelChangeType(t)}: {c}</Pill>
+              <span
+                key={t}
+                className={`pill info btn${changeTypeFilter === t ? ' active' : ''}`}
+                onClick={() => setChangeTypeFilter(prev => prev === t ? null : t)}
+              >{labelChangeType(t)}: {c}</span>
             ))}
             <select value={String(days)} onChange={(e) => setDays(Number(e.target.value))}>
               <option value="7">Last 7 days</option>
@@ -164,7 +179,7 @@ export function Changes({ watchIds, watchItems }: { watchIds: Set<string>; watch
               </thead>
 
               <tbody>
-                {sorted.slice(0, 500).map(g => {
+                {filtered.slice(0, 500).map(g => {
                   const isOpen = expanded.has(g.release_plan_id)
                   const when = g.latest_detected.slice(0, 16).replace('T', ' ')
                   const url = buildMsVerifyLink(g.product_name, g.feature_name)
@@ -246,7 +261,7 @@ export function Changes({ watchIds, watchItems }: { watchIds: Set<string>; watch
           </div>
         )}
 
-        {sorted.length > 500 && (
+        {filtered.length > 500 && (
           <div style={{ color: 'var(--muted)', fontSize: 12, marginTop: 10, opacity: 0.8 }}>
             Showing up to 500 features. Narrow the time range for more results.
           </div>
