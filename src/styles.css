@@ -757,3 +757,38 @@ p{
   color: var(--text);
   white-space:nowrap;
 }
+
+/* ── Inline diff highlighting ── */
+.diff-inline{
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.diff-block{
+  font-size: 12px;
+  line-height: 1.6;
+  padding: 8px 10px;
+  border-radius: var(--radius-sm);
+  background: rgba(0,0,0,0.3);
+  border: 1px solid var(--border);
+  max-height: 240px;
+  overflow: auto;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.diff-add{
+  background: rgba(52,211,153,0.18);
+  color: #6ee7b7;
+  border-radius: 2px;
+  padding: 0 1px;
+  text-decoration: none;
+}
+
+.diff-del{
+  background: rgba(248,113,113,0.18);
+  color: #fca5a5;
+  border-radius: 2px;
+  padding: 0 1px;
+  text-decoration: line-through;
+}

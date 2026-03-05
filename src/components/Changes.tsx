@@ -6,7 +6,7 @@ import { analysisStatusEmoji } from '../logic'
 import { Pill } from './Pill'
 import { labelChangeType } from '../utils/changes'
 import { buildMsVerifyLink } from '../utils/msLinks'
-import { short } from '../utils/text'
+import { wordDiff } from '../utils/diff'
 
 type FeatureChangeGroup = {
   release_plan_id: string
@@ -30,6 +30,7 @@ export function Changes({ watchIds, watchItems }: { watchIds: Set<string>; watch
   }))
 
   const [expanded, setExpanded] = useState<Set<string>>(() => new Set())
+  const [changeTypeFilter, setChangeTypeFilter] = useState<string | null>(null)
 
   const toggleExpand = (id: string) => {
     setExpanded(prev => {
@@ -108,6 +109,12 @@ export function Changes({ watchIds, watchItems }: { watchIds: Set<string>; watch
     return arr
   }, [groups, sort])
 
+  // Filter groups by change type
+  const filtered = useMemo(() => {
+    if (!changeTypeFilter) return sorted
+    return sorted.filter(g => g.changeTypes.includes(changeTypeFilter))
+  }, [sorted, changeTypeFilter])
+
   // Summary stats
   const summary = useMemo(() => {
     const rawTotal = (q.data ?? []).length
@@ -128,8 +135,16 @@ export function Changes({ watchIds, watchItems }: { watchIds: Set<string>; watch
           <div className="row">
             <Pill kind="muted">{summary.featureCount.toLocaleString()} feature{summary.featureCount !== 1 ? 's' : ''}</Pill>
             <Pill kind="muted">{summary.rawTotal.toLocaleString()} change{summary.rawTotal !== 1 ? 's' : ''}</Pill>
+            <span
+              className={`pill btn${changeTypeFilter === null ? ' active' : ''}`}
+              onClick={() => setChangeTypeFilter(null)}
+            >All</span>
             {summary.top.map(([t, c]) => (
-              <Pill key={t} kind="info">{labelChangeType(t)}: {c}</Pill>
+              <span
+                key={t}
+                className={`pill info btn${changeTypeFilter === t ? ' active' : ''}`}
+                onClick={() => setChangeTypeFilter(prev => prev === t ? null : t)}
+              >{labelChangeType(t)}: {c}</span>
             ))}
             <select value={String(days)} onChange={(e) => setDays(Number(e.target.value))}>
               <option value="7">Last 7 days</option>
@@ -164,7 +179,7 @@ export function Changes({ watchIds, watchItems }: { watchIds: Set<string>; watch
               </thead>
 
               <tbody>
-                {sorted.slice(0, 500).map(g => {
+                {filtered.slice(0, 500).map(g => {
                   const isOpen = expanded.has(g.release_plan_id)
                   const when = g.latest_detected.slice(0, 16).replace('T', ' ')
                   const url = buildMsVerifyLink(g.product_name, g.feature_name)
@@ -212,28 +227,54 @@ export function Changes({ watchIds, watchItems }: { watchIds: Set<string>; watch
                       {/* Detail sub-rows (when expanded) */}
                       {isOpen && g.changes.map(c => {
                         const detWhen = (c.detected_at ?? '').slice(0, 16).replace('T', ' ')
-                        let fieldLabel: string
-                        let changeText: string
 
-                        if (c.change_type === 'new_feature') {
-                          fieldLabel = 'New feature'
-                          changeText = 'Feature added to release plan'
-                        } else if (c.change_type === 'removed') {
-                          fieldLabel = 'Removed'
-                          changeText = 'Feature removed from release plan'
-                        } else {
-                          fieldLabel = c.field_changed ?? '—'
-                          changeText = `${short(c.old_value)} → ${short(c.new_value)}`
+                        if (c.change_type === 'new_feature' || c.change_type === 'removed') {
+                          return (
+                            <tr key={c.id} className="changes-detail">
+                              <td></td>
+                              <td>{detWhen}</td>
+                              <td style={{ paddingLeft: 16 }}><span className="change-badge">{labelChangeType(c.change_type)}</span></td>
+                              <td>{c.change_type === 'new_feature' ? 'New feature' : 'Removed'}</td>
+                              <td></td>
+                              <td colSpan={2} style={{ whiteSpace: 'normal' }}>
+                                {c.change_type === 'new_feature' ? 'Feature added to release plan' : 'Feature removed from release plan'}
+                              </td>
+                              <td></td>
+                            </tr>
+                          )
                         }
+
+                        const oldVal = c.old_value ?? ''
+                        const newVal = c.new_value ?? ''
+                        const isLong = oldVal.length > 80 || newVal.length > 80
+                        const segments = wordDiff(oldVal, newVal)
 
                         return (
                           <tr key={c.id} className="changes-detail">
                             <td></td>
                             <td>{detWhen}</td>
                             <td style={{ paddingLeft: 16 }}><span className="change-badge">{labelChangeType(c.change_type)}</span></td>
-                            <td title={fieldLabel}>{fieldLabel}</td>
+                            <td>{c.field_changed ?? '\u2014'}</td>
                             <td></td>
-                            <td colSpan={2} title={changeText} style={{ whiteSpace: 'normal', maxWidth: 400 }}>{changeText}</td>
+                            <td colSpan={2} style={{ whiteSpace: 'normal', maxWidth: 600 }}>
+                              {isLong ? (
+                                <div className="diff-block">
+                                  {segments.map((seg, i) => (
+                                    <span key={i} className={seg.type === 'added' ? 'diff-add' : seg.type === 'removed' ? 'diff-del' : undefined}>
+                                      {seg.text}
+                                    </span>
+                                  ))}
+                                </div>
+                              ) : (
+                                <span className="diff-inline">
+                                  {segments.map((seg, i) => (
+                                    <span key={i} className={seg.type === 'added' ? 'diff-add' : seg.type === 'removed' ? 'diff-del' : undefined}>
+                                      {seg.text}
+                                    </span>
+                                  ))}
+                                </span>
+                              )}
+                            </td>
                             <td></td>
                           </tr>
                         )
@@ -246,7 +287,7 @@ export function Changes({ watchIds, watchItems }: { watchIds: Set<string>; watch
           </div>
         )}
 
-        {sorted.length > 500 && (
+        {filtered.length > 500 && (
           <div style={{ color: 'var(--muted)', fontSize: 12, marginTop: 10, opacity: 0.8 }}>
             Showing up to 500 features. Narrow the time range for more results.
           </div>
