@@ -6,7 +6,7 @@ import { analysisStatusEmoji } from '../logic'
 import { Pill } from './Pill'
 import { labelChangeType } from '../utils/changes'
 import { buildMsVerifyLink } from '../utils/msLinks'
-import { short } from '../utils/text'
+import { wordDiff } from '../utils/diff'
 
 type FeatureChangeGroup = {
   release_plan_id: string
@@ -227,28 +227,54 @@ export function Changes({ watchIds, watchItems }: { watchIds: Set<string>; watch
                       {/* Detail sub-rows (when expanded) */}
                       {isOpen && g.changes.map(c => {
                         const detWhen = (c.detected_at ?? '').slice(0, 16).replace('T', ' ')
-                        let fieldLabel: string
-                        let changeText: string
 
-                        if (c.change_type === 'new_feature') {
-                          fieldLabel = 'New feature'
-                          changeText = 'Feature added to release plan'
-                        } else if (c.change_type === 'removed') {
-                          fieldLabel = 'Removed'
-                          changeText = 'Feature removed from release plan'
-                        } else {
-                          fieldLabel = c.field_changed ?? '—'
-                          changeText = `${short(c.old_value)} → ${short(c.new_value)}`
+                        if (c.change_type === 'new_feature' || c.change_type === 'removed') {
+                          return (
+                            <tr key={c.id} className="changes-detail">
+                              <td></td>
+                              <td>{detWhen}</td>
+                              <td style={{ paddingLeft: 16 }}><span className="change-badge">{labelChangeType(c.change_type)}</span></td>
+                              <td>{c.change_type === 'new_feature' ? 'New feature' : 'Removed'}</td>
+                              <td></td>
+                              <td colSpan={2} style={{ whiteSpace: 'normal' }}>
+                                {c.change_type === 'new_feature' ? 'Feature added to release plan' : 'Feature removed from release plan'}
+                              </td>
+                              <td></td>
+                            </tr>
+                          )
                         }
+
+                        const oldVal = c.old_value ?? ''
+                        const newVal = c.new_value ?? ''
+                        const isLong = oldVal.length > 80 || newVal.length > 80
+                        const segments = wordDiff(oldVal, newVal)
 
                         return (
                           <tr key={c.id} className="changes-detail">
                             <td></td>
                             <td>{detWhen}</td>
                             <td style={{ paddingLeft: 16 }}><span className="change-badge">{labelChangeType(c.change_type)}</span></td>
-                            <td title={fieldLabel}>{fieldLabel}</td>
+                            <td>{c.field_changed ?? '\u2014'}</td>
                             <td></td>
-                            <td colSpan={2} title={changeText} style={{ whiteSpace: 'normal', maxWidth: 400 }}>{changeText}</td>
+                            <td colSpan={2} style={{ whiteSpace: 'normal', maxWidth: 600 }}>
+                              {isLong ? (
+                                <div className="diff-block">
+                                  {segments.map((seg, i) => (
+                                    <span key={i} className={seg.type === 'added' ? 'diff-add' : seg.type === 'removed' ? 'diff-del' : undefined}>
+                                      {seg.text}
+                                    </span>
+                                  ))}
+                                </div>
+                              ) : (
+                                <span className="diff-inline">
+                                  {segments.map((seg, i) => (
+                                    <span key={i} className={seg.type === 'added' ? 'diff-add' : seg.type === 'removed' ? 'diff-del' : undefined}>
+                                      {seg.text}
+                                    </span>
+                                  ))}
+                                </span>
+                              )}
+                            </td>
                             <td></td>
                           </tr>
                         )
