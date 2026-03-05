@@ -1,5 +1,14 @@
 const { ok, bad, corsHeaders, getSupabaseAdmin, fetchAllReleasePlans } = require('./_util')
 
+function stripHtml(s) {
+  return String(s ?? '')
+    .replace(/<br\s*\/?>/gi, '\n')
+    .replace(/<\/p>/gi, '\n\n')
+    .replace(/<[^>]+>/g, '')
+    .replace(/\n{3,}/g, '\n\n')
+    .trim()
+}
+
 const TRACKED_FIELDS = [
   'GA date',
   'Public preview date',
@@ -75,8 +84,8 @@ exports.handler = async (event) => {
 
       let changesFound = false
       for (const field of TRACKED_FIELDS) {
-        const oldVal = String(prev[field] ?? '').trim()
-        const newVal = String(f[field] ?? '').trim()
+        const oldVal = stripHtml(prev[field])
+        const newVal = stripHtml(f[field])
         if (oldVal !== newVal) {
           changesFound = true
           changeLogRows.push({
@@ -85,8 +94,8 @@ exports.handler = async (event) => {
             product_name: String(f['Product name'] || ''),
             change_type: classify(field),
             field_changed: field,
-            old_value: oldVal.slice(0, 500),
-            new_value: newVal.slice(0, 500),
+            old_value: oldVal,
+            new_value: newVal,
           })
         }
       }
