@@ -758,37 +758,105 @@ p{
   white-space:nowrap;
 }
 
-/* ── Inline diff highlighting ── */
-.diff-inline{
-  font-size: 12px;
-  line-height: 1.5;
+/* ═══════════════════════════════
+   Diff panel (expanded change viewer)
+   ═══════════════════════════════ */
+.changes-table tr.changes-detail-panel td{
+  background: var(--bg-subtle);
+  border-bottom: 2px solid var(--border-strong);
 }
 
-.diff-block{
-  font-size: 12px;
-  line-height: 1.6;
-  padding: 8px 10px;
-  border-radius: var(--radius-sm);
-  background: rgba(0,0,0,0.3);
+.diff-panel{
+  padding: 12px 16px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.diff-change{
   border: 1px solid var(--border);
-  max-height: 240px;
-  overflow: auto;
+  border-radius: var(--radius-md);
+  background: var(--panel);
+  overflow: hidden;
+}
+
+.diff-change-header{
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 12px;
+  background: var(--panel2);
+  border-bottom: 1px solid var(--border);
+  font-size: 12px;
+}
+
+.diff-field{
+  font-weight: 600;
+  color: var(--text);
+}
+
+.diff-timestamp{
+  margin-left: auto;
+  color: var(--muted);
+  font-size: 11px;
+}
+
+.diff-body-simple{
+  padding: 10px 14px;
+  font-size: 13px;
+  color: var(--text-secondary);
+}
+
+/* Short values: old/new lines like git diff */
+.diff-body-short{
+  font-family: 'JetBrains Mono', 'Fira Code', 'Cascadia Code', 'SF Mono', ui-monospace, monospace;
+  font-size: 12px;
+  line-height: 1.7;
+}
+
+.diff-line-old{
+  padding: 4px 14px;
+  background: rgba(248,113,113,0.10);
+  color: #fca5a5;
+  border-bottom: 1px solid rgba(248,113,113,0.08);
+}
+
+.diff-line-new{
+  padding: 4px 14px;
+  background: rgba(52,211,153,0.10);
+  color: #6ee7b7;
+}
+
+.diff-gutter{
+  display: inline-block;
+  width: 20px;
+  font-weight: 700;
+  user-select: none;
+  opacity: 0.7;
+}
+
+/* Long values: unified inline diff with word highlighting */
+.diff-body-unified{
+  padding: 10px 14px;
+  font-size: 13px;
+  line-height: 1.7;
   white-space: pre-wrap;
   word-break: break-word;
+  max-height: 400px;
+  overflow: auto;
 }
 
 .diff-add{
-  background: rgba(52,211,153,0.18);
+  background: rgba(52,211,153,0.20);
   color: #6ee7b7;
-  border-radius: 2px;
-  padding: 0 1px;
-  text-decoration: none;
+  border-radius: 3px;
+  padding: 1px 2px;
 }
 
 .diff-del{
-  background: rgba(248,113,113,0.18);
+  background: rgba(248,113,113,0.20);
   color: #fca5a5;
-  border-radius: 2px;
-  padding: 0 1px;
+  border-radius: 3px;
+  padding: 1px 2px;
   text-decoration: line-through;
 }

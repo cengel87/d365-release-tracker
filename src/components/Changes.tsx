@@ -224,61 +224,61 @@ export function Changes({ watchIds, watchItems }: { watchIds: Set<string>; watch
                         </td>
                       </tr>
 
-                      {/* Detail sub-rows (when expanded) */}
-                      {isOpen && g.changes.map(c => {
-                        const detWhen = (c.detected_at ?? '').slice(0, 16).replace('T', ' ')
+                      {/* Diff panel (when expanded) */}
+                      {isOpen && (
+                        <tr className="changes-detail-panel">
+                          <td colSpan={8} style={{ padding: 0 }}>
+                            <div className="diff-panel">
+                              {g.changes.map(c => {
+                                const detWhen = (c.detected_at ?? '').slice(0, 16).replace('T', ' ')
 
-                        if (c.change_type === 'new_feature' || c.change_type === 'removed') {
-                          return (
-                            <tr key={c.id} className="changes-detail">
-                              <td></td>
-                              <td>{detWhen}</td>
-                              <td style={{ paddingLeft: 16 }}><span className="change-badge">{labelChangeType(c.change_type)}</span></td>
-                              <td>{c.change_type === 'new_feature' ? 'New feature' : 'Removed'}</td>
-                              <td></td>
-                              <td colSpan={2} style={{ whiteSpace: 'normal' }}>
-                                {c.change_type === 'new_feature' ? 'Feature added to release plan' : 'Feature removed from release plan'}
-                              </td>
-                              <td></td>
-                            </tr>
-                          )
-                        }
+                                if (c.change_type === 'new_feature' || c.change_type === 'removed') {
+                                  return (
+                                    <div key={c.id} className="diff-change">
+                                      <div className="diff-change-header">
+                                        <span className="change-badge">{labelChangeType(c.change_type)}</span>
+                                        <span className="diff-timestamp">{detWhen}</span>
+                                      </div>
+                                      <div className="diff-body-simple">
+                                        {c.change_type === 'new_feature' ? 'Feature added to release plan' : 'Feature removed from release plan'}
+                                      </div>
+                                    </div>
+                                  )
+                                }
 
-                        const oldVal = c.old_value ?? ''
-                        const newVal = c.new_value ?? ''
-                        const isLong = oldVal.length > 80 || newVal.length > 80
-                        const segments = wordDiff(oldVal, newVal)
+                                const oldVal = c.old_value ?? ''
+                                const newVal = c.new_value ?? ''
+                                const segments = wordDiff(oldVal, newVal)
+                                const isShort = oldVal.length <= 80 && newVal.length <= 80
 
-                        return (
-                          <tr key={c.id} className="changes-detail">
-                            <td></td>
-                            <td>{detWhen}</td>
-                            <td style={{ paddingLeft: 16 }}><span className="change-badge">{labelChangeType(c.change_type)}</span></td>
-                            <td>{c.field_changed ?? '\u2014'}</td>
-                            <td></td>
-                            <td colSpan={2} style={{ whiteSpace: 'normal', maxWidth: 600 }}>
-                              {isLong ? (
-                                <div className="diff-block">
-                                  {segments.map((seg, i) => (
-                                    <span key={i} className={seg.type === 'added' ? 'diff-add' : seg.type === 'removed' ? 'diff-del' : undefined}>
-                                      {seg.text}
-                                    </span>
-                                  ))}
-                                </div>
-                              ) : (
-                                <span className="diff-inline">
-                                  {segments.map((seg, i) => (
-                                    <span key={i} className={seg.type === 'added' ? 'diff-add' : seg.type === 'removed' ? 'diff-del' : undefined}>
-                                      {seg.text}
-                                    </span>
-                                  ))}
-                                </span>
-                              )}
-                            </td>
-                            <td></td>
-                          </tr>
-                        )
-                      })}
+                                return (
+                                  <div key={c.id} className="diff-change">
+                                    <div className="diff-change-header">
+                                      <span className="change-badge">{labelChangeType(c.change_type)}</span>
+                                      <span className="diff-field">{c.field_changed}</span>
+                                      <span className="diff-timestamp">{detWhen}</span>
+                                    </div>
+                                    {isShort ? (
+                                      <div className="diff-body-short">
+                                        <div className="diff-line-old"><span className="diff-gutter">-</span>{oldVal || '(empty)'}</div>
+                                        <div className="diff-line-new"><span className="diff-gutter">+</span>{newVal || '(empty)'}</div>
+                                      </div>
+                                    ) : (
+                                      <div className="diff-body-unified">
+                                        {segments.map((seg, i) => (
+                                          <span key={i} className={seg.type === 'added' ? 'diff-add' : seg.type === 'removed' ? 'diff-del' : undefined}>
+                                            {seg.text}
+                                          </span>
+                                        ))}
+                                      </div>
+                                    )}
+                                  </div>
+                                )
+                              })}
+                            </div>
+                          </td>
+                        </tr>
+                      )}
                     </React.Fragment>
                   )
                 })}
