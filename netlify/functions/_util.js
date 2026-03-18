@@ -45,13 +45,15 @@ function ttlSeconds() {
 
 function safeJsonParse(text) {
   try { return JSON.parse(text) } catch (_) {}
-  // Fallback: try to extract the first JSON object
-  const first = text.indexOf('{')
-  const last = text.lastIndexOf('}')
-  if (first >= 0 && last > first) {
-    const sliced = text.slice(first, last + 1)
-    try { return JSON.parse(sliced) } catch (_) {}
-  }
+  // Fallback: strip leading whitespace/BOM, fix invalid backslash escapes, then retry
+  let cleaned = text.replace(/^\s+/, '')
+  const first = cleaned.indexOf('{')
+  const last = cleaned.lastIndexOf('}')
+  if (first >= 0 && last > first) cleaned = cleaned.slice(first, last + 1)
+  // Fix invalid JSON backslash escapes (e.g. \M, \P from Windows paths in MS data)
+  // Replace lone backslashes not followed by a valid JSON escape char with \\
+  cleaned = cleaned.replace(/\\(?!["\\/bfnrtu])/g, '\\\\')
+  try { return JSON.parse(cleaned) } catch (_) {}
   return null
 }
 
