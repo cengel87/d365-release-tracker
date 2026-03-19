@@ -55,9 +55,9 @@ export function Watchlist(props: {
 
     const impactRank = (impact: WatchlistItem['impact'] | string | undefined) => {
       const m: Record<string, number> = {
-        '🔴 High': 0,
-        '🟡 Medium': 1,
-        '🟢 Low': 2,
+        '🔴 Mitigation Required': 0,
+        '🟡 Minor Impact': 1,
+        '🟢 No Impact': 2,
         '🚩 To Review': 3,
       }
       return m[String(impact ?? '')] ?? 99
@@ -158,9 +158,9 @@ export function Watchlist(props: {
 
           <select value={impactFilter} onChange={e => setImpactFilter(e.target.value as any)}>
             <option value="">All impacts</option>
-            <option value="🔴 High">🔴 High</option>
-            <option value="🟡 Medium">🟡 Medium</option>
-            <option value="🟢 Low">🟢 Low</option>
+            <option value="🔴 Mitigation Required">🔴 Mitigation Required</option>
+            <option value="🟡 Minor Impact">🟡 Minor Impact</option>
+            <option value="🟢 No Impact">🟢 No Impact</option>
             <option value="🚩 To Review">🚩 To Review</option>
           </select>
 
@@ -330,6 +330,19 @@ export function Watchlist(props: {
             {exporting ? 'Exporting…' : 'Download watchlist CSV'}
           </button>
         </div>
+
+        <details className="collapsible-section" style={{ marginTop: 14 }}>
+          <summary className="collapsible-header">
+            <span className="collapsible-chevron">▶</span>
+            <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--muted)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>Impact Legend</span>
+          </summary>
+          <div style={{ padding: '14px 16px', display: 'flex', flexDirection: 'column', gap: 10, fontSize: 13, color: 'var(--text-secondary)', lineHeight: 1.6 }}>
+            <div><span style={{ color: '#fb7185', fontWeight: 600 }}>🔴 Mitigation Required</span> — Feature is used in MDC and is deprecated, removed, or fundamentally changed. Requires proactive mitigation or re-engineering. Likely impacts development and/or change management.</div>
+            <div><span style={{ color: '#fbbf24', fontWeight: 600 }}>🟡 Minor Impact</span> — Feature is used in MDC and will continue to work mostly as-is. Introduces small behavioral, UI, naming, or configuration changes. May require light development effort or change management.</div>
+            <div><span style={{ color: '#34d399', fontWeight: 600 }}>🟢 No Impact</span> — Continues to work without impact, has an optional alternate, or is a new feature not currently used that may enhance MDC. No mandatory development or mitigation required.</div>
+            <div><span style={{ color: '#94a3b8', fontWeight: 600 }}>🚩 To Review</span> — Not yet assessed. Default for newly added watchlist items.</div>
+          </div>
+        </details>
       </div>
     </div>
   )

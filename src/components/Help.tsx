@@ -51,11 +51,12 @@ export function Help({ fetchedAt, sourceUrl }: { fetchedAt: string, sourceUrl: s
         </p>
 
         <h4 style={{ marginTop: 12 }}>Impact</h4>
-        <div className="row" style={{ gap: 8, flexWrap: 'wrap', marginTop: 4 }}>
-          {(['🔴 High', '🟡 Medium', '🟢 Low', '🚩 To Review'] as const).map(v => (
-            <span key={v} style={{ fontSize: 13 }}>{v}</span>
-          ))}
-        </div>
+        <ul style={{ fontSize: 13, lineHeight: 1.8 }}>
+          <li>🔴 <b>Mitigation Required</b> — Feature is used in MDC and is deprecated, removed, or fundamentally changed. Requires proactive mitigation or re-engineering. Likely impacts development and/or change management.</li>
+          <li>🟡 <b>Minor Impact</b> — Feature is used in MDC and will continue to work mostly as-is. Introduces small behavioral, UI, naming, or configuration changes. May require light development effort or change management.</li>
+          <li>🟢 <b>No Impact</b> — Feature is used in MDC but continues to work without impact, has an optional alternate, or is a new feature not currently used that may enhance MDC. No mandatory development or mitigation required.</li>
+          <li>🚩 <b>To Review</b> — Not yet assessed. Default for newly added watchlist items.</li>
+        </ul>
 
         <h4 style={{ marginTop: 12 }}>Flagged for</h4>
         <p style={{ color: 'var(--text-secondary)', fontSize: 13 }}>

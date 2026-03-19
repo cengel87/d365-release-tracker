@@ -1,6 +1,6 @@
 const { ok, bad, corsHeaders, getSupabaseAdmin } = require('./_util')
 
-const IMPACT = new Set(['🔴 High', '🟡 Medium', '🟢 Low', '🚩 To Review'])
+const IMPACT = new Set(['🔴 Mitigation Required', '🟡 Minor Impact', '🟢 No Impact', '🚩 To Review'])
 
 exports.handler = async (event) => {
   if (event.httpMethod === 'OPTIONS') return { statusCode: 200, headers: corsHeaders(), body: '' }

@@ -7,7 +7,7 @@ import { stripHtml } from '../utils/text'
 import { labelChangeType } from '../utils/changes'
 import { Pill } from './Pill'
 
-const IMPACT_OPTIONS: WatchlistItem['impact'][] = ['🔴 High', '🟡 Medium', '🟢 Low', '🚩 To Review'].filter(
+const IMPACT_OPTIONS: WatchlistItem['impact'][] = ['🔴 Mitigation Required', '🟡 Minor Impact', '🟢 No Impact', '🚩 To Review'].filter(
   (v, i, a) => a.indexOf(v) === i
 ) as any
 

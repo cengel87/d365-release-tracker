@@ -19,13 +19,13 @@ type Props = {
 }
 
 const IMPACT_COLORS: Record<string, string> = {
-  '🔴 High': '#fb7185',
-  '🟡 Medium': '#fbbf24',
-  '🟢 Low': '#34d399',
+  '🔴 Mitigation Required': '#fb7185',
+  '🟡 Minor Impact': '#fbbf24',
+  '🟢 No Impact': '#34d399',
   '🚩 To Review': '#94a3b8',
 }
 
-const IMPACT_ORDER = ['🔴 High', '🟡 Medium', '🟢 Low', '🚩 To Review'] as const
+const IMPACT_ORDER = ['🔴 Mitigation Required', '🟡 Minor Impact', '🟢 No Impact', '🚩 To Review'] as const
 
 const ANALYSIS_COLORS: Record<string, string> = {
   'Reviewed': '#34d399',
@@ -73,9 +73,9 @@ export function Dashboard({ all, watchItems, fetchedAt, sourceUrl, onOpenDetail 
     let ga30 = 0, ga60 = 0, ga90 = 0
 
     for (const { w, f } of joined) {
-      if (w.impact === '🔴 High') byImpact.high++
-      else if (w.impact === '🟡 Medium') byImpact.medium++
-      else if (w.impact === '🟢 Low') byImpact.low++
+      if (w.impact === '🔴 Mitigation Required') byImpact.high++
+      else if (w.impact === '🟡 Minor Impact') byImpact.medium++
+      else if (w.impact === '🟢 No Impact') byImpact.low++
       else byImpact.toReview++
 
       if (w.analysis_status === 'Reviewed') byAnalysis.reviewed++
@@ -100,9 +100,9 @@ export function Dashboard({ all, watchItems, fetchedAt, sourceUrl, onOpenDetail 
       const k = monthKey(f.gaDate!)
       const label = monthLabel(f.gaDate!)
       const prev = map.get(k) ?? { month: k, label, high: 0, medium: 0, low: 0, toReview: 0 }
-      if (w.impact === '🔴 High') prev.high++
-      else if (w.impact === '🟡 Medium') prev.medium++
-      else if (w.impact === '🟢 Low') prev.low++
+      if (w.impact === '🔴 Mitigation Required') prev.high++
+      else if (w.impact === '🟡 Minor Impact') prev.medium++
+      else if (w.impact === '🟢 No Impact') prev.low++
       else prev.toReview++
       map.set(k, prev)
     }
@@ -224,10 +224,10 @@ export function Dashboard({ all, watchItems, fetchedAt, sourceUrl, onOpenDetail 
           <div className="dash-stat-group">
             <div className="dash-stat-group-label">Impact</div>
             <div className="dash-stat-row">
-              <span className="dash-stat"><span className="dash-dot" style={{ background: '#fb7185' }} />{kpis.byImpact.high} High</span>
-              <span className="dash-stat"><span className="dash-dot" style={{ background: '#fbbf24' }} />{kpis.byImpact.medium} Med</span>
-              <span className="dash-stat"><span className="dash-dot" style={{ background: '#34d399' }} />{kpis.byImpact.low} Low</span>
-              <span className="dash-stat"><span className="dash-dot" style={{ background: '#94a3b8' }} />{kpis.byImpact.toReview} Review</span>
+              <span className="dash-stat"><span className="dash-dot" style={{ background: '#fb7185' }} />{kpis.byImpact.high} Mitigation</span>
+              <span className="dash-stat"><span className="dash-dot" style={{ background: '#fbbf24' }} />{kpis.byImpact.medium} Minor</span>
+              <span className="dash-stat"><span className="dash-dot" style={{ background: '#34d399' }} />{kpis.byImpact.low} No Impact</span>
+              <span className="dash-stat"><span className="dash-dot" style={{ background: '#94a3b8' }} />{kpis.byImpact.toReview} To Review</span>
             </div>
           </div>
           <div className="dash-stat-group">
@@ -266,9 +266,9 @@ export function Dashboard({ all, watchItems, fetchedAt, sourceUrl, onOpenDetail 
                   <YAxis tick={axisProps} axisLine={false} tickLine={false} allowDecimals={false} />
                   <Tooltip contentStyle={tooltipStyle} labelStyle={labelStyle} itemStyle={itemStyle} cursor={cursorStyle} />
                   <Legend wrapperStyle={legendStyle} />
-                  <Bar dataKey="high" name="High" stackId="a" fill={IMPACT_COLORS['🔴 High']} radius={[0, 0, 0, 0]} />
-                  <Bar dataKey="medium" name="Medium" stackId="a" fill={IMPACT_COLORS['🟡 Medium']} />
-                  <Bar dataKey="low" name="Low" stackId="a" fill={IMPACT_COLORS['🟢 Low']} />
+                  <Bar dataKey="high" name="Mitigation Required" stackId="a" fill={IMPACT_COLORS['🔴 Mitigation Required']} radius={[0, 0, 0, 0]} />
+                  <Bar dataKey="medium" name="Minor Impact" stackId="a" fill={IMPACT_COLORS['🟡 Minor Impact']} />
+                  <Bar dataKey="low" name="No Impact" stackId="a" fill={IMPACT_COLORS['🟢 No Impact']} />
                   <Bar dataKey="toReview" name="To Review" stackId="a" fill={IMPACT_COLORS['🚩 To Review']} radius={[4, 4, 0, 0]} />
                 </BarChart>
               </ResponsiveContainer>
