@@ -275,7 +275,9 @@ export function Watchlist(props: {
                 notesByFeature.set(n.release_plan_id, arr)
               }
               const stripEmoji = (s: string) => s.replace(/^[\u{1F000}-\u{1FFFF}\u{2600}-\u{27BF}\u{FE00}-\u{FE0F}\u{200D}]+\s*/u, '')
+              const cleanText = (s: string | null | undefined) => String(s ?? '').replace(/\r?\n/g, ' ').trim()
               const rows = filteredJoined.map(({ w, f }) => {
+                const ff = f!
                 const notes = notesByFeature.get(w.release_plan_id) ?? []
                 const notesStr = notes
                   .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
@@ -285,23 +287,39 @@ export function Watchlist(props: {
                   })
                   .join('\n')
                 return {
-                  analysis_status: w.analysis_status ?? 'In Progress',
+                  product: ff['Product name'],
+                  feature: ff['Feature name'],
+                  ms_link: ff.msLink ?? '',
+                  business_value: cleanText(ff['Business value']),
+                  feature_details: cleanText(ff['Feature details']),
+                  wave: ff.releaseWave ?? '',
+                  early_access: fmtDate(ff.earlyAccessDate),
+                  preview: fmtDate(ff.previewDate),
+                  ga: fmtDate(ff.gaDate),
+                  enabled_for: String(ff['Enabled for'] ?? ''),
                   impact: stripEmoji(w.impact),
                   flagged_for: w.flagged_for || '',
-                  status: f!.status,
-                  product: f!['Product name'],
-                  feature: f!['Feature name'],
-                  wave: f!.releaseWave ?? '',
-                  early_access: fmtDate(f!.earlyAccessDate),
-                  preview: fmtDate(f!.previewDate),
-                  ga: fmtDate(f!.gaDate),
-                  enabled_for: String(f!['Enabled for'] ?? ''),
+                  analysis_status: w.analysis_status ?? 'In Progress',
                   notes: notesStr,
-                  release_plan_id: w.release_plan_id,
-                  ms_link: f!.msLink ?? '',
                 }
               })
-              const csv = toCsv(rows)
+              const columns = [
+                { key: 'product', label: 'Product' },
+                { key: 'feature', label: 'Feature' },
+                { key: 'ms_link', label: 'MS Link' },
+                { key: 'business_value', label: 'Business Value' },
+                { key: 'feature_details', label: 'Feature Details' },
+                { key: 'wave', label: 'Wave' },
+                { key: 'early_access', label: 'Early Access' },
+                { key: 'preview', label: 'Public Preview' },
+                { key: 'ga', label: 'GA Date' },
+                { key: 'enabled_for', label: 'Enabled For' },
+                { key: 'impact', label: 'Impact' },
+                { key: 'flagged_for', label: 'Flagged For' },
+                { key: 'analysis_status', label: 'Analysis Status' },
+                { key: 'notes', label: 'Notes' },
+              ]
+              const csv = toCsv(rows, columns)
               download(`watchlist_${new Date().toISOString().slice(0, 10)}.csv`, csv)
             } catch (e) {
               console.error('CSV export failed', e)
