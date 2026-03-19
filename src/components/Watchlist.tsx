@@ -1,5 +1,5 @@
 import React, { useMemo, useState } from 'react'
-import type { AnalysisStatus, EnrichedFeature, Note, WatchlistItem } from '../types'
+import type { AnalysisStatus, EnrichedFeature, FlaggedFor, Note, WatchlistItem } from '../types'
 import { analysisStatusEmoji, fmtDate, statusEmoji, statusShort } from '../logic'
 import { api } from '../api'
 import { Pill } from './Pill'
@@ -7,16 +7,15 @@ import { toCsv, download } from '../utils/csv'
 
 type SortKey = 'analysisStatus' | 'impact' | 'flaggedFor' | 'status' | 'product' | 'feature' | 'wave' | 'ga' | 'enabledFor'
 
-const IMPACT_OPTIONS: Array<WatchlistItem['impact'] | null> = [null, '🔴 High', '🟡 Medium', '🟢 Low', '🚩 To Review']
-const ANALYSIS_OPTIONS: Array<AnalysisStatus | null> = [null, 'In Progress', 'Reviewed', 'Not Applicable']
-
 export function Watchlist(props: {
   all: EnrichedFeature[]
   watch: WatchlistItem[]
   onOpenDetail: (id: string) => void
   waves: string[]
+  products: string[]
+  enablements: string[]
 }) {
-  const { all, watch, onOpenDetail, waves } = props
+  const { all, watch, onOpenDetail, waves, products, enablements } = props
 
   const joined = useMemo(() => {
     const byId = new Map(all.map(f => [f['Release Plan ID'], f] as const))
@@ -30,9 +29,15 @@ export function Watchlist(props: {
     key: 'ga',
     dir: 'asc',
   }))
-  const [analysisFilter, setAnalysisFilter] = useState<AnalysisStatus | null>(null)
-  const [impactFilter, setImpactFilter] = useState<WatchlistItem['impact'] | null>(null)
-  const [waveFilter, setWaveFilter] = useState<string | null>(null)
+  const [search, setSearch] = useState('')
+  const [analysisFilter, setAnalysisFilter] = useState<AnalysisStatus | ''>('')
+  const [impactFilter, setImpactFilter] = useState<WatchlistItem['impact'] | ''>('')
+  const [flaggedForFilter, setFlaggedForFilter] = useState<FlaggedFor | '__all'>('__all')
+  const [waveFilter, setWaveFilter] = useState('')
+  const [productFilter, setProductFilter] = useState('')
+  const [statusFilter, setStatusFilter] = useState<EnrichedFeature['status'] | ''>('')
+  const [gaStart, setGaStart] = useState<string>('')
+  const [gaEnd, setGaEnd] = useState<string>('')
 
   const toggleSort = (key: SortKey) => {
     if (sort.key === key) setSort({ key, dir: sort.dir === 'asc' ? 'desc' : 'asc' })
@@ -94,13 +99,29 @@ export function Watchlist(props: {
   }, [joined, sort])
 
   const filteredJoined = useMemo(() => {
+    const s = search.trim().toLowerCase()
+    const gaStartDate = gaStart ? new Date(gaStart + 'T00:00:00') : null
+    const gaEndDate = gaEnd ? new Date(gaEnd + 'T00:00:00') : null
     return sortedJoined.filter(({ w, f }) => {
       if (analysisFilter && w.analysis_status !== analysisFilter) return false
       if (impactFilter && w.impact !== impactFilter) return false
+      if (flaggedForFilter !== '__all' && w.flagged_for !== flaggedForFilter) return false
       if (waveFilter && f?.releaseWave !== waveFilter) return false
+      if (productFilter && f?.['Product name'] !== productFilter) return false
+      if (statusFilter && f?.status !== statusFilter) return false
+      if (gaStartDate && gaEndDate && f) {
+        if (!f.gaDate) return false
+        if (f.gaDate < gaStartDate || f.gaDate > gaEndDate) return false
+      }
+      if (s && f) {
+        const hay = [f['Feature name'], f['Product name'], f['Business value'], f['Feature details']].map(v => String(v ?? '').toLowerCase()).join(' ')
+        if (!hay.includes(s)) return false
+      }
       return true
     })
-  }, [sortedJoined, analysisFilter, impactFilter, waveFilter])
+  }, [sortedJoined, search, analysisFilter, impactFilter, flaggedForFilter, waveFilter, productFilter, statusFilter, gaStart, gaEnd])
+
+  const hasAnyFilter = search || analysisFilter || impactFilter || flaggedForFilter !== '__all' || waveFilter || productFilter || statusFilter || gaStart || gaEnd
 
   return (
     <div className="grid">
@@ -110,48 +131,92 @@ export function Watchlist(props: {
             <h3 style={{ margin: 0 }}>Team watchlist</h3>
             <div style={{ color: 'var(--muted)', fontSize: 12, marginTop: 4 }}>Shared across the team via Supabase</div>
           </div>
-          <Pill kind="info">{filteredJoined.length} tracked</Pill>
+          <div className="row">
+            <Pill kind="info">{filteredJoined.length} tracked</Pill>
+            {hasAnyFilter && (
+              <button
+                className="btn secondary small"
+                onClick={() => {
+                  setSearch(''); setAnalysisFilter(''); setImpactFilter('');
+                  setFlaggedForFilter('__all'); setWaveFilter(''); setProductFilter('');
+                  setStatusFilter(''); setGaStart(''); setGaEnd('')
+                }}
+              >Clear filters</button>
+            )}
+          </div>
         </div>
 
-        {/* Filter pills */}
-        <div style={{ marginTop: 12, display: 'flex', flexDirection: 'column', gap: 8 }}>
-          <div className="row" style={{ gap: 6, flexWrap: 'wrap' }}>
-            <span style={{ fontSize: 12, color: 'var(--muted)', minWidth: 60 }}>Analysis:</span>
-            {ANALYSIS_OPTIONS.map(v => (
-              <span
-                key={v ?? '__all'}
-                className={`pill btn${analysisFilter === v ? ' active' : ''}`}
-                onClick={() => setAnalysisFilter(v)}
-              >
-                {v === null ? 'All' : `${analysisStatusEmoji(v)} ${v}`}
-              </span>
-            ))}
-          </div>
-          <div className="row" style={{ gap: 6, flexWrap: 'wrap' }}>
-            <span style={{ fontSize: 12, color: 'var(--muted)', minWidth: 60 }}>Impact:</span>
-            {IMPACT_OPTIONS.map(v => (
-              <span
-                key={v ?? '__all'}
-                className={`pill btn${impactFilter === v ? ' active' : ''}`}
-                onClick={() => setImpactFilter(v)}
-              >
-                {v === null ? 'All' : v}
-              </span>
-            ))}
-          </div>
-          <div className="row" style={{ gap: 6, flexWrap: 'wrap' }}>
-            <span style={{ fontSize: 12, color: 'var(--muted)', minWidth: 60 }}>Wave:</span>
-            <span
-              className={`pill btn${waveFilter === null ? ' active' : ''}`}
-              onClick={() => setWaveFilter(null)}
-            >All</span>
-            {waves.map(w => (
-              <span
-                key={w}
-                className={`pill btn${waveFilter === w ? ' active' : ''}`}
-                onClick={() => setWaveFilter(prev => prev === w ? null : w)}
-              >{w}</span>
-            ))}
+        {/* Filters */}
+        <div className="row" style={{ marginTop: 12, gap: 8, flexWrap: 'wrap', alignItems: 'end' }}>
+          <input
+            className="input"
+            style={{ minWidth: 200 }}
+            placeholder="Search keywords..."
+            value={search}
+            onChange={e => setSearch(e.target.value)}
+          />
+
+          <select value={impactFilter} onChange={e => setImpactFilter(e.target.value as any)}>
+            <option value="">All impacts</option>
+            <option value="🔴 High">🔴 High</option>
+            <option value="🟡 Medium">🟡 Medium</option>
+            <option value="🟢 Low">🟢 Low</option>
+            <option value="🚩 To Review">🚩 To Review</option>
+          </select>
+
+          <select value={analysisFilter} onChange={e => setAnalysisFilter(e.target.value as any)}>
+            <option value="">All analysis</option>
+            <option value="In Progress">🔶 In Progress</option>
+            <option value="Reviewed">✅ Reviewed</option>
+            <option value="Not Applicable">🚫 Not Applicable</option>
+          </select>
+
+          <select value={flaggedForFilter} onChange={e => setFlaggedForFilter(e.target.value as any)}>
+            <option value="__all">All teams</option>
+            <option value="Business">Business</option>
+            <option value="Tech Team">Tech Team</option>
+            <option value="Both">Both</option>
+            <option value="BTA Only">BTA Only</option>
+            <option value="">Unflagged</option>
+          </select>
+
+          <select value={statusFilter} onChange={e => setStatusFilter(e.target.value as any)}>
+            <option value="">All statuses</option>
+            <option value="Generally Available">🟢 Generally Available</option>
+            <option value="Public Preview">🔵 Public Preview</option>
+            <option value="Early Access">🟣 Early Access</option>
+            <option value="Planned">⚪ Planned</option>
+          </select>
+
+          <select value={productFilter} onChange={e => setProductFilter(e.target.value)}>
+            <option value="">All products</option>
+            {products.map(p => <option key={p} value={p}>{p}</option>)}
+          </select>
+
+          <select value={waveFilter} onChange={e => setWaveFilter(e.target.value)}>
+            <option value="">All waves</option>
+            {waves.map(w => <option key={w} value={w}>{w}</option>)}
+          </select>
+
+          <div className="field">
+            <span className="label">GA Date Range</span>
+            <div className="row" style={{ gap: 6 }}>
+              <input
+                className="input"
+                type="date"
+                value={gaStart}
+                onChange={e => setGaStart(e.target.value)}
+                title="GA start date"
+              />
+              <span style={{ color: 'var(--muted)', fontSize: 12 }}>to</span>
+              <input
+                className="input"
+                type="date"
+                value={gaEnd}
+                onChange={e => setGaEnd(e.target.value)}
+                title="GA end date"
+              />
+            </div>
           </div>
         </div>
 
@@ -209,12 +274,19 @@ export function Watchlist(props: {
                 arr.push(n)
                 notesByFeature.set(n.release_plan_id, arr)
               }
+              const stripEmoji = (s: string) => s.replace(/^[\u{1F000}-\u{1FFFF}\u{2600}-\u{27BF}\u{FE00}-\u{FE0F}\u{200D}]+\s*/u, '')
               const rows = filteredJoined.map(({ w, f }) => {
                 const notes = notesByFeature.get(w.release_plan_id) ?? []
-                const notesStr = notes.map(n => `[${n.author_name}] ${n.content}`).join(' | ')
+                const notesStr = notes
+                  .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
+                  .map(n => {
+                    const date = new Date(n.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
+                    return `${n.author_name} (${date}): ${n.content.replace(/\r?\n/g, ' ')}`
+                  })
+                  .join('\n')
                 return {
                   analysis_status: w.analysis_status ?? 'In Progress',
-                  impact: w.impact,
+                  impact: stripEmoji(w.impact),
                   flagged_for: w.flagged_for || '',
                   status: f!.status,
                   product: f!['Product name'],

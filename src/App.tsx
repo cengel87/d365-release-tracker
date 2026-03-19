@@ -2,7 +2,7 @@ import React, { useMemo, useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { api } from './api'
 import type { EnrichedFeature, WatchlistItem } from './types'
-import { applyFilters, enrich, monthKey, monthLabel } from './logic'
+import { applyFilters, enrich } from './logic'
 
 import { IdentityGate } from './components/IdentityGate'
 import { Header } from './components/Header'
@@ -100,93 +100,6 @@ export default function App() {
   const waves = useMemo(() => Array.from(new Set(all.map(x => x.releaseWave).filter(Boolean) as string[])).sort(), [all])
   const enablements = useMemo(() => Array.from(new Set(all.map(x => String(x['Enabled for'] ?? '')).filter(Boolean))).sort(), [all])
 
-  const metrics = useMemo(() => {
-    const total = all.length
-    const ga = all.filter(x => x.status === 'Generally Available').length
-    const preview = all.filter(x => x.status === 'Public Preview').length
-    const early = all.filter(x => x.status === 'Early Access').length
-    const planned = all.filter(x => x.status === 'Planned').length
-    const today = new Date(); today.setHours(0, 0, 0, 0)
-    const upcoming = all.filter(x => x.gaDate && x.gaDate > today).length
-    return { total, ga, preview, early, planned, upcoming }
-  }, [all])
-
-  const upcomingByMonth = useMemo(() => {
-    const today = new Date(); today.setHours(0, 0, 0, 0)
-    const future = all.filter(x => x.gaDate && x.gaDate > today) as (EnrichedFeature & { gaDate: Date })[]
-    const map = new Map<string, { month: string, label: string, count: number, highImpact: number }>()
-    const impacts = new Map((watchQ.data ?? []).map(w => [w.release_plan_id, w.impact] as const))
-    for (const f of future) {
-      const k = monthKey(f.gaDate)
-      const label = monthLabel(f.gaDate)
-      const prev = map.get(k) ?? { month: k, label, count: 0, highImpact: 0 }
-      prev.count += 1
-      if (impacts.get(f['Release Plan ID']) === '🔴 High') prev.highImpact += 1
-      map.set(k, prev)
-    }
-    return Array.from(map.values()).sort((a, b) => a.month.localeCompare(b.month)).slice(0, 18)
-  }, [all, watchQ.data])
-
-  const upcomingPreviewByMonth = useMemo(() => {
-    const today = new Date(); today.setHours(0, 0, 0, 0)
-    const future = all.filter(x => x.previewDate && x.previewDate > today) as (EnrichedFeature & { previewDate: Date })[]
-    const map = new Map<string, { month: string; label: string; count: number; highImpact: number }>()
-    const impacts = new Map((watchQ.data ?? []).map(w => [w.release_plan_id, w.impact] as const))
-    for (const f of future) {
-      const k = monthKey(f.previewDate)
-      const label = monthLabel(f.previewDate)
-      const prev = map.get(k) ?? { month: k, label, count: 0, highImpact: 0 }
-      prev.count += 1
-      if (impacts.get(f['Release Plan ID']) === '🔴 High') prev.highImpact += 1
-      map.set(k, prev)
-    }
-    return Array.from(map.values()).sort((a, b) => a.month.localeCompare(b.month)).slice(0, 18)
-  }, [all, watchQ.data])
-
-  const upcomingEarlyAccessByMonth = useMemo(() => {
-    const today = new Date(); today.setHours(0, 0, 0, 0)
-    const future = all.filter(x => x.earlyAccessDate && x.earlyAccessDate > today) as (EnrichedFeature & { earlyAccessDate: Date })[]
-    const map = new Map<string, { month: string; label: string; count: number; highImpact: number }>()
-    const impacts = new Map((watchQ.data ?? []).map(w => [w.release_plan_id, w.impact] as const))
-    for (const f of future) {
-      const k = monthKey(f.earlyAccessDate)
-      const label = monthLabel(f.earlyAccessDate)
-      const prev = map.get(k) ?? { month: k, label, count: 0, highImpact: 0 }
-      prev.count += 1
-      if (impacts.get(f['Release Plan ID']) === '🔴 High') prev.highImpact += 1
-      map.set(k, prev)
-    }
-    return Array.from(map.values()).sort((a, b) => a.month.localeCompare(b.month)).slice(0, 18)
-  }, [all, watchQ.data])
-
-  const byWaveMonth = useMemo(() => {
-    const today = new Date(); today.setHours(0, 0, 0, 0)
-    const future = all.filter(x => x.gaDate && x.gaDate > today && x.releaseWave) as (EnrichedFeature & { gaDate: Date, releaseWave: string })[]
-    const map = new Map<string, any>()
-    for (const f of future) {
-      const wave = f.releaseWave
-      const month = monthLabel(f.gaDate)
-      const key = `${wave}__${month}`
-      const prev = map.get(key) ?? { wave, month, count: 0 }
-      prev.count += 1
-      map.set(key, prev)
-    }
-    const wavesSet = Array.from(new Set(future.map(x => x.releaseWave))).sort()
-    const monthsSet = Array.from(new Set(future.map(x => monthKey(x.gaDate)))).sort().slice(0, 18)
-    const rows = monthsSet.map(mk => {
-      const d = new Date(mk + '-01T00:00:00')
-      const month = monthLabel(d)
-      const row: Record<string, any> = { month }
-      for (const wv of wavesSet) row[wv] = 0
-      for (const wv of wavesSet) {
-        const key = `${wv}__${month}`
-        const v = map.get(key)?.count ?? 0
-        row[wv] = v
-      }
-      return row
-    })
-    return { rows, waves: wavesSet }
-  }, [all])
 
   const selectedImpact = useMemo(() => {
     if (!selectedId) return undefined
@@ -236,13 +149,11 @@ export default function App() {
             <>
               {tab === 'Dashboard' && (
                 <Dashboard
-                  metrics={metrics}
-                  upcomingByMonth={upcomingByMonth}
-                  upcomingPreviewByMonth={upcomingPreviewByMonth}
-                  upcomingEarlyAccessByMonth={upcomingEarlyAccessByMonth}
-                  byWaveMonth={byWaveMonth}
+                  all={all}
+                  watchItems={watchQ.data ?? []}
                   fetchedAt={releaseQ.data.fetchedAt}
                   sourceUrl={releaseQ.data.sourceUrl}
+                  onOpenDetail={(id) => openDetail(id, 'watchlist')}
                 />
               )}
 
@@ -265,6 +176,8 @@ export default function App() {
                   watch={watchQ.data ?? []}
                   onOpenDetail={(id) => openDetail(id, 'watchlist')}
                   waves={waves}
+                  products={products}
+                  enablements={enablements}
                 />
               )}
 
