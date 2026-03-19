@@ -109,19 +109,6 @@ export function Dashboard({ all, watchItems, fetchedAt, sourceUrl, onOpenDetail 
     return Array.from(map.values()).sort((a, b) => a.month.localeCompare(b.month)).slice(0, 12)
   }, [joined])
 
-  // ── Chart 2: Analysis progress by impact ──
-  const analysisData = useMemo(() => {
-    return IMPACT_ORDER.map(impact => {
-      const items = joined.filter(({ w }) => w.impact === impact)
-      return {
-        impact: impact.replace(/^.+\s/, ''), // strip emoji
-        reviewed: items.filter(({ w }) => w.analysis_status === 'Reviewed').length,
-        inProgress: items.filter(({ w }) => w.analysis_status === 'In Progress').length,
-        notApplicable: items.filter(({ w }) => w.analysis_status === 'Not Applicable').length,
-      }
-    }).filter(d => d.reviewed + d.inProgress + d.notApplicable > 0)
-  }, [joined])
-
   // Analysis donut (overall)
   const analysisPie = useMemo(() => [
     { name: 'Reviewed', value: kpis.byAnalysis.reviewed, color: ANALYSIS_COLORS['Reviewed'] },
@@ -284,35 +271,20 @@ export function Dashboard({ all, watchItems, fetchedAt, sourceUrl, onOpenDetail 
         <div className="card">
           <h3>Analysis Progress</h3>
           <p style={{ margin: '0 0 8px 0', color: 'var(--muted)', fontSize: 12, lineHeight: 1.5 }}>
-            Review status of upcoming features broken down by impact level. Donut shows overall completion.
+            Overall review completion across all upcoming watchlisted features.
           </p>
-          <div style={{ display: 'flex', gap: 16, height: 300 }}>
-            {/* Horizontal stacked bar by impact */}
-            <div style={{ flex: 1 }}>
-              <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={analysisData} layout="vertical">
-                  <CartesianGrid stroke={colors.grid} horizontal={false} />
-                  <XAxis type="number" tick={axisProps} axisLine={false} tickLine={false} allowDecimals={false} />
-                  <YAxis type="category" dataKey="impact" tick={axisProps} axisLine={false} tickLine={false} width={70} />
-                  <Tooltip contentStyle={tooltipStyle} labelStyle={labelStyle} itemStyle={itemStyle} cursor={cursorStyle} />
-                  <Legend wrapperStyle={legendStyle} />
-                  <Bar dataKey="reviewed" name="Reviewed" stackId="a" fill={ANALYSIS_COLORS['Reviewed']} />
-                  <Bar dataKey="inProgress" name="In Progress" stackId="a" fill={ANALYSIS_COLORS['In Progress']} />
-                  <Bar dataKey="notApplicable" name="Not Applicable" stackId="a" fill={ANALYSIS_COLORS['Not Applicable']} />
-                </BarChart>
-              </ResponsiveContainer>
-            </div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 24, padding: '20px 0' }}>
             {/* Donut */}
             {analysisPie.length > 0 && (
-              <div style={{ width: 140, flexShrink: 0, position: 'relative' }}>
+              <div style={{ width: 180, flexShrink: 0 }}>
                 <ResponsiveContainer width="100%" height={180}>
                   <PieChart>
                     <Pie
                       data={analysisPie}
                       cx="50%"
                       cy="50%"
-                      innerRadius={42}
-                      outerRadius={65}
+                      innerRadius={52}
+                      outerRadius={78}
                       paddingAngle={3}
                       dataKey="value"
                       stroke="none"
@@ -322,12 +294,25 @@ export function Dashboard({ all, watchItems, fetchedAt, sourceUrl, onOpenDetail 
                     <Tooltip contentStyle={tooltipStyle} labelStyle={labelStyle} itemStyle={itemStyle} />
                   </PieChart>
                 </ResponsiveContainer>
-                <div style={{ textAlign: 'center', color: 'var(--text)', fontSize: 22, fontWeight: 700, marginTop: -4 }}>
+                <div style={{ textAlign: 'center', color: 'var(--text)', fontSize: 28, fontWeight: 700, marginTop: -4 }}>
                   {completedPct}%
                 </div>
                 <div style={{ textAlign: 'center', color: 'var(--muted)', fontSize: 11, marginTop: 2 }}>complete</div>
               </div>
             )}
+            {/* Breakdown */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 12, flex: 1 }}>
+              {analysisPie.map(d => (
+                <div key={d.name} style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                  <span style={{ width: 10, height: 10, borderRadius: '50%', background: d.color, flexShrink: 0 }} />
+                  <span style={{ fontSize: 13, color: 'var(--text)', fontWeight: 600, minWidth: 100 }}>{d.name}</span>
+                  <span style={{ fontSize: 22, fontWeight: 700, color: 'var(--text)' }}>{d.value}</span>
+                  <span style={{ fontSize: 12, color: 'var(--muted)' }}>
+                    ({kpis.total > 0 ? Math.round((d.value / kpis.total) * 100) : 0}%)
+                  </span>
+                </div>
+              ))}
+            </div>
           </div>
         </div>
       </div>
