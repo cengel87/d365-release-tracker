@@ -1,7 +1,7 @@
 import React, { useMemo, useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { api } from '../api'
-import type { ChangeLogItem, WatchlistItem } from '../types'
+import type { ChangeLogItem, EnrichedFeature, WatchlistItem } from '../types'
 import { analysisStatusEmoji } from '../logic'
 import { Pill } from './Pill'
 import { labelChangeType } from '../utils/changes'
@@ -19,8 +19,15 @@ type FeatureChangeGroup = {
 
 type SortKey = 'detected_at' | 'change_type' | 'product_name' | 'feature_name' | 'changes'
 
-export function Changes({ watchIds, watchItems }: { watchIds: Set<string>; watchItems: WatchlistItem[] }) {
+export function Changes({ watchIds, watchItems, waves, allFeatures }: { watchIds: Set<string>; watchItems: WatchlistItem[]; waves: string[]; allFeatures: EnrichedFeature[] }) {
   const watchMap = useMemo(() => new Map(watchItems.map(w => [w.release_plan_id, w])), [watchItems])
+  const waveMap = useMemo(() => {
+    const m = new Map<string, string>()
+    for (const f of allFeatures) {
+      if (f.releaseWave) m.set(f['Release Plan ID'], f.releaseWave)
+    }
+    return m
+  }, [allFeatures])
   const [days, setDays] = useState(14)
   const q = useQuery({ queryKey: ['changes', days], queryFn: () => api.listChanges(days) })
 
@@ -31,6 +38,7 @@ export function Changes({ watchIds, watchItems }: { watchIds: Set<string>; watch
 
   const [expanded, setExpanded] = useState<Set<string>>(() => new Set())
   const [changeTypeFilter, setChangeTypeFilter] = useState<string | null>(null)
+  const [waveFilter, setWaveFilter] = useState<string | null>(null)
 
   const toggleExpand = (id: string) => {
     setExpanded(prev => {
@@ -109,11 +117,13 @@ export function Changes({ watchIds, watchItems }: { watchIds: Set<string>; watch
     return arr
   }, [groups, sort])
 
-  // Filter groups by change type
+  // Filter groups by change type and wave
   const filtered = useMemo(() => {
-    if (!changeTypeFilter) return sorted
-    return sorted.filter(g => g.changeTypes.includes(changeTypeFilter))
-  }, [sorted, changeTypeFilter])
+    let result = sorted
+    if (changeTypeFilter) result = result.filter(g => g.changeTypes.includes(changeTypeFilter))
+    if (waveFilter) result = result.filter(g => waveMap.get(g.release_plan_id) === waveFilter)
+    return result
+  }, [sorted, changeTypeFilter, waveFilter, waveMap])
 
   // Summary stats
   const summary = useMemo(() => {
@@ -146,10 +156,16 @@ export function Changes({ watchIds, watchItems }: { watchIds: Set<string>; watch
                 onClick={() => setChangeTypeFilter(prev => prev === t ? null : t)}
               >{labelChangeType(t)}: {c}</span>
             ))}
+            <select value={waveFilter ?? ''} onChange={(e) => setWaveFilter(e.target.value || null)}>
+              <option value="">All waves</option>
+              {waves.map(w => <option key={w} value={w}>{w}</option>)}
+            </select>
             <select value={String(days)} onChange={(e) => setDays(Number(e.target.value))}>
               <option value="7">Last 7 days</option>
               <option value="14">Last 14 days</option>
               <option value="30">Last 30 days</option>
+              <option value="60">Last 60 days</option>
+              <option value="90">Last 90 days</option>
             </select>
           </div>
         </div>
@@ -179,7 +195,7 @@ export function Changes({ watchIds, watchItems }: { watchIds: Set<string>; watch
               </thead>
 
               <tbody>
-                {filtered.slice(0, 500).map(g => {
+                {filtered.map(g => {
                   const isOpen = expanded.has(g.release_plan_id)
                   const when = g.latest_detected.slice(0, 16).replace('T', ' ')
                   const url = buildMsVerifyLink(g.product_name, g.feature_name)
@@ -287,9 +303,9 @@ export function Changes({ watchIds, watchItems }: { watchIds: Set<string>; watch
           </div>
         )}
 
-        {filtered.length > 500 && (
+        {(q.data ?? []).length >= 5000 && (
           <div style={{ color: 'var(--muted)', fontSize: 12, marginTop: 10, opacity: 0.8 }}>
-            Showing up to 500 features. Narrow the time range for more results.
+            Results capped at 5,000 changes. Narrow the time range or filter by wave for more specific results.
           </div>
         )}
       </div>

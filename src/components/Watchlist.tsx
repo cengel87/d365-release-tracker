@@ -14,8 +14,9 @@ export function Watchlist(props: {
   all: EnrichedFeature[]
   watch: WatchlistItem[]
   onOpenDetail: (id: string) => void
+  waves: string[]
 }) {
-  const { all, watch, onOpenDetail } = props
+  const { all, watch, onOpenDetail, waves } = props
 
   const joined = useMemo(() => {
     const byId = new Map(all.map(f => [f['Release Plan ID'], f] as const))
@@ -31,6 +32,7 @@ export function Watchlist(props: {
   }))
   const [analysisFilter, setAnalysisFilter] = useState<AnalysisStatus | null>(null)
   const [impactFilter, setImpactFilter] = useState<WatchlistItem['impact'] | null>(null)
+  const [waveFilter, setWaveFilter] = useState<string | null>(null)
 
   const toggleSort = (key: SortKey) => {
     if (sort.key === key) setSort({ key, dir: sort.dir === 'asc' ? 'desc' : 'asc' })
@@ -92,12 +94,13 @@ export function Watchlist(props: {
   }, [joined, sort])
 
   const filteredJoined = useMemo(() => {
-    return sortedJoined.filter(({ w }) => {
+    return sortedJoined.filter(({ w, f }) => {
       if (analysisFilter && w.analysis_status !== analysisFilter) return false
       if (impactFilter && w.impact !== impactFilter) return false
+      if (waveFilter && f?.releaseWave !== waveFilter) return false
       return true
     })
-  }, [sortedJoined, analysisFilter, impactFilter])
+  }, [sortedJoined, analysisFilter, impactFilter, waveFilter])
 
   return (
     <div className="grid">
@@ -134,6 +137,20 @@ export function Watchlist(props: {
               >
                 {v === null ? 'All' : v}
               </span>
+            ))}
+          </div>
+          <div className="row" style={{ gap: 6, flexWrap: 'wrap' }}>
+            <span style={{ fontSize: 12, color: 'var(--muted)', minWidth: 60 }}>Wave:</span>
+            <span
+              className={`pill btn${waveFilter === null ? ' active' : ''}`}
+              onClick={() => setWaveFilter(null)}
+            >All</span>
+            {waves.map(w => (
+              <span
+                key={w}
+                className={`pill btn${waveFilter === w ? ' active' : ''}`}
+                onClick={() => setWaveFilter(prev => prev === w ? null : w)}
+              >{w}</span>
             ))}
           </div>
         </div>

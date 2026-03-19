@@ -264,10 +264,11 @@ export default function App() {
                   all={all}
                   watch={watchQ.data ?? []}
                   onOpenDetail={(id) => openDetail(id, 'watchlist')}
+                  waves={waves}
                 />
               )}
 
-              {tab === 'Changes' && <Changes watchIds={watchIds} watchItems={watchQ.data ?? []} />}
+              {tab === 'Changes' && <Changes watchIds={watchIds} watchItems={watchQ.data ?? []} waves={waves} allFeatures={all} />}
 
               {tab === 'Help' && <Help fetchedAt={releaseQ.data.fetchedAt} sourceUrl={releaseQ.data.sourceUrl} />}
             </>

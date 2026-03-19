@@ -6,14 +6,23 @@ exports.handler = async (event) => {
 
   try {
     const sb = getSupabaseAdmin()
-    const days = Math.max(1, Math.min(90, Number((event.queryStringParameters || {}).days || 14)))
-    const cutoff = new Date(Date.now() - days * 86400 * 1000).toISOString()
-    const { data, error } = await sb
-      .from('change_log')
-      .select('*')
-      .gte('detected_at', cutoff)
+    const params = event.queryStringParameters || {}
+    const featureId = params.release_plan_id
+
+    let query = sb.from('change_log').select('*')
+
+    if (featureId) {
+      // Fetch all changes for a specific feature (no day limit)
+      query = query.eq('release_plan_id', featureId)
+    } else {
+      const days = Math.max(1, Math.min(90, Number(params.days || 14)))
+      const cutoff = new Date(Date.now() - days * 86400 * 1000).toISOString()
+      query = query.gte('detected_at', cutoff)
+    }
+
+    const { data, error } = await query
       .order('detected_at', { ascending: false })
-      .limit(500)
+      .limit(5000)
     if (error) throw error
     return ok(data || [])
   } catch (e) {
