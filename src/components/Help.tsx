@@ -72,7 +72,7 @@ export function Help({ fetchedAt, sourceUrl }: { fetchedAt: string, sourceUrl: s
         <h4 style={{ marginTop: 12 }}>Tips</h4>
         <ul style={{ fontSize: 13, lineHeight: 1.8 }}>
           <li>Team notes include author name and date — enter your name on the identity prompt to attribute notes.</li>
-          <li>Press <kbd style={{ background: 'var(--surface-2)', padding: '1px 5px', borderRadius: 3, border: '1px solid var(--border)' }}>Esc</kbd> to close the detail panel.</li>
+          <li>Press <kbd style={{ background: 'var(--panel2)', padding: '1px 5px', borderRadius: 3, border: '1px solid var(--border)' }}>Esc</kbd> to close the detail panel.</li>
           <li><b>Download watchlist CSV</b> (bottom of Watchlist tab) exports all fields, notes, and MS links.</li>
         </ul>
       </div>

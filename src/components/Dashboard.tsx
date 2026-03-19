@@ -62,7 +62,7 @@ export function Dashboard({ metrics, upcomingByMonth, upcomingPreviewByMonth, up
   const colors = {
     grid: 'rgba(148,163,184,0.08)',
     axis: 'rgba(148,163,184,0.50)',
-    tooltipBg: 'rgba(6,9,15,0.95)',
+    tooltipBg: 'rgba(10,10,10,0.95)',
     tooltipBorder: 'rgba(148,163,184,0.15)',
     upcoming: '#38bdf8',
     highImpact: '#fb7185',

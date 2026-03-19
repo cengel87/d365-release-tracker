@@ -43,7 +43,7 @@ function FeatureChangeLog({ featureId }: { featureId: string }) {
         {changes.map(c => (
           <div key={c.id} style={{ display: 'flex', gap: 10, alignItems: 'baseline', fontSize: 13, padding: '6px 8px', borderRadius: 'var(--radius-sm)', background: 'rgba(255,255,255,0.02)', border: '1px solid var(--border)' }}>
             <span style={{ fontSize: 11, color: 'var(--muted)', whiteSpace: 'nowrap' }}>{c.detected_at.slice(0, 10)}</span>
-            <span className="change-badge" style={{ display: 'inline-flex', padding: '2px 6px', borderRadius: 6, fontSize: 11, background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(27,42,68,0.6)', whiteSpace: 'nowrap' }}>{labelChangeType(c.change_type)}</span>
+            <span className="change-badge" style={{ display: 'inline-flex', padding: '2px 6px', borderRadius: 6, fontSize: 11, background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.10)', whiteSpace: 'nowrap' }}>{labelChangeType(c.change_type)}</span>
             {c.field_changed && <span style={{ color: 'var(--text)', fontWeight: 600 }}>{c.field_changed}</span>}
             {c.old_value != null && c.new_value != null && (
               <span style={{ color: 'var(--muted)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
@@ -168,7 +168,7 @@ export function FeatureDetail({ feature, watched, onToggleWatch, showImpact, sho
             <div className="row" style={{ justifyContent: 'space-between', marginTop: 8 }}>
               <span className="badge">Posting as: {identityName || 'Guest'}</span>
               <button
-                className="btn"
+                className="btn small"
                 disabled={!note.trim() || addNoteMut.isPending}
                 onClick={() => {
                   addNoteMut.mutate({ release_plan_id: id, author_name: identityName || 'Guest', content: note.trim() })
@@ -182,7 +182,7 @@ export function FeatureDetail({ feature, watched, onToggleWatch, showImpact, sho
         </div>
       )}
 
-      <div className="grid grid2">
+      <div className="grid grid2" style={{ marginTop: 14 }}>
         <div className="card" style={{ padding: 14 }}>
           <h3>Business value</h3>
           <div style={{ whiteSpace: 'pre-wrap', color: 'var(--text-secondary)', lineHeight: 1.6, fontSize: 13 }}>

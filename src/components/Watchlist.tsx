@@ -198,7 +198,7 @@ export function Watchlist(props: {
 
         <div className="card" style={{ marginTop: 14 }}>
           <h3>Export</h3>
-          <button className="btn secondary" disabled={exporting} onClick={async () => {
+          <button className="btn secondary small" disabled={exporting} onClick={async () => {
             setExporting(true)
             try {
               const ids = filteredJoined.map(({ w }) => w.release_plan_id)
