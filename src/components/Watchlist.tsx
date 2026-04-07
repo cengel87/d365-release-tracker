@@ -1,5 +1,5 @@
 import React, { useMemo, useState } from 'react'
-import type { AnalysisStatus, EnrichedFeature, Note, WatchlistItem } from '../types'
+import type { AnalysisStatus, EnrichedFeature, FlaggedFor, Note, WatchlistItem } from '../types'
 import { analysisStatusEmoji, fmtDate, statusEmoji, statusShort } from '../logic'
 import { api } from '../api'
 import { Pill } from './Pill'
@@ -7,15 +7,15 @@ import { toCsv, download } from '../utils/csv'
 
 type SortKey = 'analysisStatus' | 'impact' | 'flaggedFor' | 'status' | 'product' | 'feature' | 'wave' | 'ga' | 'enabledFor'
 
-const IMPACT_OPTIONS: Array<WatchlistItem['impact'] | null> = [null, '🔴 High', '🟡 Medium', '🟢 Low', '🚩 To Review']
-const ANALYSIS_OPTIONS: Array<AnalysisStatus | null> = [null, 'In Progress', 'Reviewed', 'Not Applicable']
-
 export function Watchlist(props: {
   all: EnrichedFeature[]
   watch: WatchlistItem[]
   onOpenDetail: (id: string) => void
+  waves: string[]
+  products: string[]
+  enablements: string[]
 }) {
-  const { all, watch, onOpenDetail } = props
+  const { all, watch, onOpenDetail, waves, products, enablements } = props
 
   const joined = useMemo(() => {
     const byId = new Map(all.map(f => [f['Release Plan ID'], f] as const))
@@ -29,8 +29,15 @@ export function Watchlist(props: {
     key: 'ga',
     dir: 'asc',
   }))
-  const [analysisFilter, setAnalysisFilter] = useState<AnalysisStatus | null>(null)
-  const [impactFilter, setImpactFilter] = useState<WatchlistItem['impact'] | null>(null)
+  const [search, setSearch] = useState('')
+  const [analysisFilter, setAnalysisFilter] = useState<AnalysisStatus | ''>('')
+  const [impactFilter, setImpactFilter] = useState<WatchlistItem['impact'] | ''>('')
+  const [flaggedForFilter, setFlaggedForFilter] = useState<FlaggedFor | '__all'>('__all')
+  const [waveFilter, setWaveFilter] = useState('')
+  const [productFilter, setProductFilter] = useState('')
+  const [statusFilter, setStatusFilter] = useState<EnrichedFeature['status'] | ''>('')
+  const [gaStart, setGaStart] = useState<string>('')
+  const [gaEnd, setGaEnd] = useState<string>('')
 
   const toggleSort = (key: SortKey) => {
     if (sort.key === key) setSort({ key, dir: sort.dir === 'asc' ? 'desc' : 'asc' })
@@ -48,9 +55,9 @@ export function Watchlist(props: {
 
     const impactRank = (impact: WatchlistItem['impact'] | string | undefined) => {
       const m: Record<string, number> = {
-        '🔴 High': 0,
-        '🟡 Medium': 1,
-        '🟢 Low': 2,
+        '🔴 Mitigation Required': 0,
+        '🟡 Minor Impact': 1,
+        '🟢 No Impact': 2,
         '🚩 To Review': 3,
       }
       return m[String(impact ?? '')] ?? 99
@@ -92,12 +99,29 @@ export function Watchlist(props: {
   }, [joined, sort])
 
   const filteredJoined = useMemo(() => {
-    return sortedJoined.filter(({ w }) => {
+    const s = search.trim().toLowerCase()
+    const gaStartDate = gaStart ? new Date(gaStart + 'T00:00:00') : null
+    const gaEndDate = gaEnd ? new Date(gaEnd + 'T00:00:00') : null
+    return sortedJoined.filter(({ w, f }) => {
       if (analysisFilter && w.analysis_status !== analysisFilter) return false
       if (impactFilter && w.impact !== impactFilter) return false
+      if (flaggedForFilter !== '__all' && w.flagged_for !== flaggedForFilter) return false
+      if (waveFilter && f?.releaseWave !== waveFilter) return false
+      if (productFilter && f?.['Product name'] !== productFilter) return false
+      if (statusFilter && f?.status !== statusFilter) return false
+      if (gaStartDate && gaEndDate && f) {
+        if (!f.gaDate) return false
+        if (f.gaDate < gaStartDate || f.gaDate > gaEndDate) return false
+      }
+      if (s && f) {
+        const hay = [f['Feature name'], f['Product name'], f['Business value'], f['Feature details']].map(v => String(v ?? '').toLowerCase()).join(' ')
+        if (!hay.includes(s)) return false
+      }
       return true
     })
-  }, [sortedJoined, analysisFilter, impactFilter])
+  }, [sortedJoined, search, analysisFilter, impactFilter, flaggedForFilter, waveFilter, productFilter, statusFilter, gaStart, gaEnd])
+
+  const hasAnyFilter = search || analysisFilter || impactFilter || flaggedForFilter !== '__all' || waveFilter || productFilter || statusFilter || gaStart || gaEnd
 
   return (
     <div className="grid">
@@ -107,34 +131,92 @@ export function Watchlist(props: {
             <h3 style={{ margin: 0 }}>Team watchlist</h3>
             <div style={{ color: 'var(--muted)', fontSize: 12, marginTop: 4 }}>Shared across the team via Supabase</div>
           </div>
-          <Pill kind="info">{filteredJoined.length} tracked</Pill>
+          <div className="row">
+            <Pill kind="info">{filteredJoined.length} tracked</Pill>
+            {hasAnyFilter && (
+              <button
+                className="btn secondary small"
+                onClick={() => {
+                  setSearch(''); setAnalysisFilter(''); setImpactFilter('');
+                  setFlaggedForFilter('__all'); setWaveFilter(''); setProductFilter('');
+                  setStatusFilter(''); setGaStart(''); setGaEnd('')
+                }}
+              >Clear filters</button>
+            )}
+          </div>
         </div>
 
-        {/* Filter pills */}
-        <div style={{ marginTop: 12, display: 'flex', flexDirection: 'column', gap: 8 }}>
-          <div className="row" style={{ gap: 6, flexWrap: 'wrap' }}>
-            <span style={{ fontSize: 12, color: 'var(--muted)', minWidth: 60 }}>Analysis:</span>
-            {ANALYSIS_OPTIONS.map(v => (
-              <span
-                key={v ?? '__all'}
-                className={`pill btn${analysisFilter === v ? ' active' : ''}`}
-                onClick={() => setAnalysisFilter(v)}
-              >
-                {v === null ? 'All' : `${analysisStatusEmoji(v)} ${v}`}
-              </span>
-            ))}
-          </div>
-          <div className="row" style={{ gap: 6, flexWrap: 'wrap' }}>
-            <span style={{ fontSize: 12, color: 'var(--muted)', minWidth: 60 }}>Impact:</span>
-            {IMPACT_OPTIONS.map(v => (
-              <span
-                key={v ?? '__all'}
-                className={`pill btn${impactFilter === v ? ' active' : ''}`}
-                onClick={() => setImpactFilter(v)}
-              >
-                {v === null ? 'All' : v}
-              </span>
-            ))}
+        {/* Filters */}
+        <div className="row" style={{ marginTop: 12, gap: 8, flexWrap: 'wrap', alignItems: 'end' }}>
+          <input
+            className="input"
+            style={{ minWidth: 200 }}
+            placeholder="Search keywords..."
+            value={search}
+            onChange={e => setSearch(e.target.value)}
+          />
+
+          <select value={impactFilter} onChange={e => setImpactFilter(e.target.value as any)}>
+            <option value="">All impacts</option>
+            <option value="🔴 Mitigation Required">🔴 Mitigation Required</option>
+            <option value="🟡 Minor Impact">🟡 Minor Impact</option>
+            <option value="🟢 No Impact">🟢 No Impact</option>
+            <option value="🚩 To Review">🚩 To Review</option>
+          </select>
+
+          <select value={analysisFilter} onChange={e => setAnalysisFilter(e.target.value as any)}>
+            <option value="">All analysis</option>
+            <option value="In Progress">🔶 In Progress</option>
+            <option value="Reviewed">✅ Reviewed</option>
+            <option value="Not Applicable">🚫 Not Applicable</option>
+          </select>
+
+          <select value={flaggedForFilter} onChange={e => setFlaggedForFilter(e.target.value as any)}>
+            <option value="__all">All teams</option>
+            <option value="Business">Business</option>
+            <option value="Tech Team">Tech Team</option>
+            <option value="Both">Both</option>
+            <option value="BTA Only">BTA Only</option>
+            <option value="">Unflagged</option>
+          </select>
+
+          <select value={statusFilter} onChange={e => setStatusFilter(e.target.value as any)}>
+            <option value="">All statuses</option>
+            <option value="Generally Available">🟢 Generally Available</option>
+            <option value="Public Preview">🔵 Public Preview</option>
+            <option value="Early Access">🟣 Early Access</option>
+            <option value="Planned">⚪ Planned</option>
+          </select>
+
+          <select value={productFilter} onChange={e => setProductFilter(e.target.value)}>
+            <option value="">All products</option>
+            {products.map(p => <option key={p} value={p}>{p}</option>)}
+          </select>
+
+          <select value={waveFilter} onChange={e => setWaveFilter(e.target.value)}>
+            <option value="">All waves</option>
+            {waves.map(w => <option key={w} value={w}>{w}</option>)}
+          </select>
+
+          <div className="field">
+            <span className="label">GA Date Range</span>
+            <div className="row" style={{ gap: 6 }}>
+              <input
+                className="input"
+                type="date"
+                value={gaStart}
+                onChange={e => setGaStart(e.target.value)}
+                title="GA start date"
+              />
+              <span style={{ color: 'var(--muted)', fontSize: 12 }}>to</span>
+              <input
+                className="input"
+                type="date"
+                value={gaEnd}
+                onChange={e => setGaEnd(e.target.value)}
+                title="GA end date"
+              />
+            </div>
           </div>
         </div>
 
@@ -181,7 +263,7 @@ export function Watchlist(props: {
 
         <div className="card" style={{ marginTop: 14 }}>
           <h3>Export</h3>
-          <button className="btn secondary" disabled={exporting} onClick={async () => {
+          <button className="btn secondary small" disabled={exporting} onClick={async () => {
             setExporting(true)
             try {
               const ids = filteredJoined.map(({ w }) => w.release_plan_id)
@@ -192,27 +274,52 @@ export function Watchlist(props: {
                 arr.push(n)
                 notesByFeature.set(n.release_plan_id, arr)
               }
+              const stripEmoji = (s: string) => s.replace(/^[\u{1F000}-\u{1FFFF}\u{2600}-\u{27BF}\u{FE00}-\u{FE0F}\u{200D}]+\s*/u, '')
+              const cleanText = (s: string | null | undefined) => String(s ?? '').replace(/\r?\n/g, ' ').trim()
               const rows = filteredJoined.map(({ w, f }) => {
+                const ff = f!
                 const notes = notesByFeature.get(w.release_plan_id) ?? []
-                const notesStr = notes.map(n => `[${n.author_name}] ${n.content}`).join(' | ')
+                const notesStr = notes
+                  .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
+                  .map(n => {
+                    const date = new Date(n.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
+                    return `${n.author_name} (${date}): ${n.content.replace(/\r?\n/g, ' ')}`
+                  })
+                  .join('\n')
                 return {
-                  analysis_status: w.analysis_status ?? 'In Progress',
-                  impact: w.impact,
+                  product: ff['Product name'],
+                  feature: ff['Feature name'],
+                  ms_link: ff.msLink ?? '',
+                  business_value: cleanText(ff['Business value']),
+                  feature_details: cleanText(ff['Feature details']),
+                  wave: ff.releaseWave ?? '',
+                  early_access: fmtDate(ff.earlyAccessDate),
+                  preview: fmtDate(ff.previewDate),
+                  ga: fmtDate(ff.gaDate),
+                  enabled_for: String(ff['Enabled for'] ?? ''),
+                  impact: stripEmoji(w.impact),
                   flagged_for: w.flagged_for || '',
-                  status: f!.status,
-                  product: f!['Product name'],
-                  feature: f!['Feature name'],
-                  wave: f!.releaseWave ?? '',
-                  early_access: fmtDate(f!.earlyAccessDate),
-                  preview: fmtDate(f!.previewDate),
-                  ga: fmtDate(f!.gaDate),
-                  enabled_for: String(f!['Enabled for'] ?? ''),
+                  analysis_status: w.analysis_status ?? 'In Progress',
                   notes: notesStr,
-                  release_plan_id: w.release_plan_id,
-                  ms_link: f!.msLink ?? '',
                 }
               })
-              const csv = toCsv(rows)
+              const columns = [
+                { key: 'product', label: 'Product' },
+                { key: 'feature', label: 'Feature' },
+                { key: 'ms_link', label: 'MS Link' },
+                { key: 'business_value', label: 'Business Value' },
+                { key: 'feature_details', label: 'Feature Details' },
+                { key: 'wave', label: 'Wave' },
+                { key: 'early_access', label: 'Early Access' },
+                { key: 'preview', label: 'Public Preview' },
+                { key: 'ga', label: 'GA Date' },
+                { key: 'enabled_for', label: 'Enabled For' },
+                { key: 'impact', label: 'Impact' },
+                { key: 'flagged_for', label: 'Flagged For' },
+                { key: 'analysis_status', label: 'Analysis Status' },
+                { key: 'notes', label: 'Notes' },
+              ]
+              const csv = toCsv(rows, columns)
               download(`watchlist_${new Date().toISOString().slice(0, 10)}.csv`, csv)
             } catch (e) {
               console.error('CSV export failed', e)
@@ -223,6 +330,19 @@ export function Watchlist(props: {
             {exporting ? 'Exporting…' : 'Download watchlist CSV'}
           </button>
         </div>
+
+        <details className="collapsible-section" style={{ marginTop: 14 }}>
+          <summary className="collapsible-header">
+            <span className="collapsible-chevron">▶</span>
+            <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--muted)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>Impact Legend</span>
+          </summary>
+          <div style={{ padding: '14px 16px', display: 'flex', flexDirection: 'column', gap: 10, fontSize: 13, color: 'var(--text-secondary)', lineHeight: 1.6 }}>
+            <div><span style={{ color: '#fb7185', fontWeight: 600 }}>🔴 Mitigation Required</span> — Feature is used in MDC and is deprecated, removed, or fundamentally changed. Requires proactive mitigation or re-engineering. Likely impacts development and/or change management.</div>
+            <div><span style={{ color: '#fbbf24', fontWeight: 600 }}>🟡 Minor Impact</span> — Feature is used in MDC and will continue to work mostly as-is. Introduces small behavioral, UI, naming, or configuration changes. May require light development effort or change management.</div>
+            <div><span style={{ color: '#34d399', fontWeight: 600 }}>🟢 No Impact</span> — Continues to work without impact, has an optional alternate, or is a new feature not currently used that may enhance MDC. No mandatory development or mitigation required.</div>
+            <div><span style={{ color: '#94a3b8', fontWeight: 600 }}>🚩 To Review</span> — Not yet assessed. Default for newly added watchlist items.</div>
+          </div>
+        </details>
       </div>
     </div>
   )

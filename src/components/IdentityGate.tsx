@@ -22,7 +22,7 @@ export function IdentityGate({ children }: { children: (ident: ReturnType<typeof
               }}
             />
             <button
-              className="btn"
+              className="btn small"
               onClick={() => {
                 const el = document.querySelector('input.input') as HTMLInputElement | null
                 ident.save(el?.value ?? '')

@@ -48,6 +48,9 @@ export const api = {
   listChanges: async (days: number): Promise<ChangeLogItem[]> =>
     j(`/.netlify/functions/changes?days=${days}`),
 
+  listFeatureChanges: async (release_plan_id: string): Promise<ChangeLogItem[]> =>
+    j(`/.netlify/functions/changes?release_plan_id=${encodeURIComponent(release_plan_id)}`),
+
   refreshChangesNow: async (): Promise<{ total: number; newCount: number; changedCount: number }> =>
     j('/.netlify/functions/refresh', { method: 'POST' }),
 }

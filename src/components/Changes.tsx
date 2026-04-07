@@ -1,12 +1,12 @@
 import React, { useMemo, useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { api } from '../api'
-import type { ChangeLogItem, WatchlistItem } from '../types'
+import type { ChangeLogItem, EnrichedFeature, WatchlistItem } from '../types'
 import { analysisStatusEmoji } from '../logic'
 import { Pill } from './Pill'
 import { labelChangeType } from '../utils/changes'
 import { buildMsVerifyLink } from '../utils/msLinks'
-import { short } from '../utils/text'
+import { wordDiff } from '../utils/diff'
 
 type FeatureChangeGroup = {
   release_plan_id: string
@@ -19,8 +19,15 @@ type FeatureChangeGroup = {
 
 type SortKey = 'detected_at' | 'change_type' | 'product_name' | 'feature_name' | 'changes'
 
-export function Changes({ watchIds, watchItems }: { watchIds: Set<string>; watchItems: WatchlistItem[] }) {
+export function Changes({ watchIds, watchItems, waves, allFeatures }: { watchIds: Set<string>; watchItems: WatchlistItem[]; waves: string[]; allFeatures: EnrichedFeature[] }) {
   const watchMap = useMemo(() => new Map(watchItems.map(w => [w.release_plan_id, w])), [watchItems])
+  const waveMap = useMemo(() => {
+    const m = new Map<string, string>()
+    for (const f of allFeatures) {
+      if (f.releaseWave) m.set(f['Release Plan ID'], f.releaseWave)
+    }
+    return m
+  }, [allFeatures])
   const [days, setDays] = useState(14)
   const q = useQuery({ queryKey: ['changes', days], queryFn: () => api.listChanges(days) })
 
@@ -30,6 +37,8 @@ export function Changes({ watchIds, watchItems }: { watchIds: Set<string>; watch
   }))
 
   const [expanded, setExpanded] = useState<Set<string>>(() => new Set())
+  const [changeTypeFilter, setChangeTypeFilter] = useState<string | null>(null)
+  const [waveFilter, setWaveFilter] = useState<string | null>(null)
 
   const toggleExpand = (id: string) => {
     setExpanded(prev => {
@@ -108,6 +117,14 @@ export function Changes({ watchIds, watchItems }: { watchIds: Set<string>; watch
     return arr
   }, [groups, sort])
 
+  // Filter groups by change type and wave
+  const filtered = useMemo(() => {
+    let result = sorted
+    if (changeTypeFilter) result = result.filter(g => g.changeTypes.includes(changeTypeFilter))
+    if (waveFilter) result = result.filter(g => waveMap.get(g.release_plan_id) === waveFilter)
+    return result
+  }, [sorted, changeTypeFilter, waveFilter, waveMap])
+
   // Summary stats
   const summary = useMemo(() => {
     const rawTotal = (q.data ?? []).length
@@ -128,13 +145,27 @@ export function Changes({ watchIds, watchItems }: { watchIds: Set<string>; watch
           <div className="row">
             <Pill kind="muted">{summary.featureCount.toLocaleString()} feature{summary.featureCount !== 1 ? 's' : ''}</Pill>
             <Pill kind="muted">{summary.rawTotal.toLocaleString()} change{summary.rawTotal !== 1 ? 's' : ''}</Pill>
+            <span
+              className={`pill btn${changeTypeFilter === null ? ' active' : ''}`}
+              onClick={() => setChangeTypeFilter(null)}
+            >All</span>
             {summary.top.map(([t, c]) => (
-              <Pill key={t} kind="info">{labelChangeType(t)}: {c}</Pill>
+              <span
+                key={t}
+                className={`pill info btn${changeTypeFilter === t ? ' active' : ''}`}
+                onClick={() => setChangeTypeFilter(prev => prev === t ? null : t)}
+              >{labelChangeType(t)}: {c}</span>
             ))}
+            <select value={waveFilter ?? ''} onChange={(e) => setWaveFilter(e.target.value || null)}>
+              <option value="">All waves</option>
+              {waves.map(w => <option key={w} value={w}>{w}</option>)}
+            </select>
             <select value={String(days)} onChange={(e) => setDays(Number(e.target.value))}>
               <option value="7">Last 7 days</option>
               <option value="14">Last 14 days</option>
               <option value="30">Last 30 days</option>
+              <option value="60">Last 60 days</option>
+              <option value="90">Last 90 days</option>
             </select>
           </div>
         </div>
@@ -164,7 +195,7 @@ export function Changes({ watchIds, watchItems }: { watchIds: Set<string>; watch
               </thead>
 
               <tbody>
-                {sorted.slice(0, 500).map(g => {
+                {filtered.map(g => {
                   const isOpen = expanded.has(g.release_plan_id)
                   const when = g.latest_detected.slice(0, 16).replace('T', ' ')
                   const url = buildMsVerifyLink(g.product_name, g.feature_name)
@@ -209,35 +240,61 @@ export function Changes({ watchIds, watchItems }: { watchIds: Set<string>; watch
                         </td>
                       </tr>
 
-                      {/* Detail sub-rows (when expanded) */}
-                      {isOpen && g.changes.map(c => {
-                        const detWhen = (c.detected_at ?? '').slice(0, 16).replace('T', ' ')
-                        let fieldLabel: string
-                        let changeText: string
+                      {/* Diff panel (when expanded) */}
+                      {isOpen && (
+                        <tr className="changes-detail-panel">
+                          <td colSpan={8} style={{ padding: 0 }}>
+                            <div className="diff-panel">
+                              {g.changes.map(c => {
+                                const detWhen = (c.detected_at ?? '').slice(0, 16).replace('T', ' ')
 
-                        if (c.change_type === 'new_feature') {
-                          fieldLabel = 'New feature'
-                          changeText = 'Feature added to release plan'
-                        } else if (c.change_type === 'removed') {
-                          fieldLabel = 'Removed'
-                          changeText = 'Feature removed from release plan'
-                        } else {
-                          fieldLabel = c.field_changed ?? '—'
-                          changeText = `${short(c.old_value)} → ${short(c.new_value)}`
-                        }
+                                if (c.change_type === 'new_feature' || c.change_type === 'removed') {
+                                  return (
+                                    <div key={c.id} className="diff-change">
+                                      <div className="diff-change-header">
+                                        <span className="change-badge">{labelChangeType(c.change_type)}</span>
+                                        <span className="diff-timestamp">{detWhen}</span>
+                                      </div>
+                                      <div className="diff-body-simple">
+                                        {c.change_type === 'new_feature' ? 'Feature added to release plan' : 'Feature removed from release plan'}
+                                      </div>
+                                    </div>
+                                  )
+                                }
 
-                        return (
-                          <tr key={c.id} className="changes-detail">
-                            <td></td>
-                            <td>{detWhen}</td>
-                            <td style={{ paddingLeft: 16 }}><span className="change-badge">{labelChangeType(c.change_type)}</span></td>
-                            <td title={fieldLabel}>{fieldLabel}</td>
-                            <td></td>
-                            <td colSpan={2} title={changeText} style={{ whiteSpace: 'normal', maxWidth: 400 }}>{changeText}</td>
-                            <td></td>
-                          </tr>
-                        )
-                      })}
+                                const oldVal = c.old_value ?? ''
+                                const newVal = c.new_value ?? ''
+                                const segments = wordDiff(oldVal, newVal)
+                                const isShort = oldVal.length <= 80 && newVal.length <= 80
+
+                                return (
+                                  <div key={c.id} className="diff-change">
+                                    <div className="diff-change-header">
+                                      <span className="change-badge">{labelChangeType(c.change_type)}</span>
+                                      <span className="diff-field">{c.field_changed}</span>
+                                      <span className="diff-timestamp">{detWhen}</span>
+                                    </div>
+                                    {isShort ? (
+                                      <div className="diff-body-short">
+                                        <div className="diff-line-old"><span className="diff-gutter">-</span>{oldVal || '(empty)'}</div>
+                                        <div className="diff-line-new"><span className="diff-gutter">+</span>{newVal || '(empty)'}</div>
+                                      </div>
+                                    ) : (
+                                      <div className="diff-body-unified">
+                                        {segments.map((seg, i) => (
+                                          <span key={i} className={seg.type === 'added' ? 'diff-add' : seg.type === 'removed' ? 'diff-del' : undefined}>
+                                            {seg.text}
+                                          </span>
+                                        ))}
+                                      </div>
+                                    )}
+                                  </div>
+                                )
+                              })}
+                            </div>
+                          </td>
+                        </tr>
+                      )}
                     </React.Fragment>
                   )
                 })}
@@ -246,9 +303,9 @@ export function Changes({ watchIds, watchItems }: { watchIds: Set<string>; watch
           </div>
         )}
 
-        {sorted.length > 500 && (
+        {(q.data ?? []).length >= 5000 && (
           <div style={{ color: 'var(--muted)', fontSize: 12, marginTop: 10, opacity: 0.8 }}>
-            Showing up to 500 features. Narrow the time range for more results.
+            Results capped at 5,000 changes. Narrow the time range or filter by wave for more specific results.
           </div>
         )}
       </div>
