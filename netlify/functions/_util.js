@@ -57,28 +57,70 @@ function safeJsonParse(text) {
   return null
 }
 
-async function fetchAllReleasePlans() {
-  const now = Date.now()
-  const ttl = ttlSeconds() * 1000
-  if (_cache.payload && (now - _cache.at) < ttl) return _cache.payload
+const PAGE_TIMEOUT_MS = 20000; // Microsoft's API can take 5-10s+ per page, more under concurrent load
+const PAGE_RETRIES = 2
+const MAX_PAGES = 20
 
-  const results = []
-  for (let page = 1; page <= 20; page++) {
-    const url = page === 1 ? API_URL : `${API_URL}?page=${page}`
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 5000); // 5s timeout per page
+async function fetchOnePageAttempt(page) {
+  const url = page === 1 ? API_URL : `${API_URL}?page=${page}`
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), PAGE_TIMEOUT_MS);
+  try {
     const resp = await fetch(url, { headers: HEADERS, signal: controller.signal });
-    clearTimeout(timeoutId);
     if (!resp.ok) throw new Error(`Microsoft API error ${resp.status}`)
     const text = await resp.text()
     const data = safeJsonParse(text)
     if (!data || !Array.isArray(data.results)) {
       throw new Error('Unexpected Microsoft API response shape')
     }
-    for (const f of data.results) {
-      if (f && typeof f === 'object' && f['Feature name']) results.push(f)
+    return data
+  } finally {
+    clearTimeout(timeoutId)
+  }
+}
+
+async function fetchOnePage(page) {
+  let lastErr
+  for (let attempt = 1; attempt <= PAGE_RETRIES; attempt++) {
+    try {
+      return await fetchOnePageAttempt(page)
+    } catch (e) {
+      lastErr = e
     }
-    if (!data.morerecords) break
+  }
+  throw lastErr
+}
+
+function collectFeatures(data, into) {
+  for (const f of data.results) {
+    if (f && typeof f === 'object' && f['Feature name']) into.push(f)
+  }
+}
+
+async function fetchAllReleasePlans() {
+  const now = Date.now()
+  const ttl = ttlSeconds() * 1000
+  if (_cache.payload && (now - _cache.at) < ttl) return _cache.payload
+
+  const results = []
+  const first = await fetchOnePage(1)
+  collectFeatures(first, results)
+
+  if (first.morerecords) {
+    // The API reports total record/page counts, so remaining pages can be
+    // fetched in parallel instead of one-by-one (which is too slow overall
+    // to fit in a serverless function's execution limit).
+    const perPage = Number(first.maxrecordsperpage) || first.results.length || 100
+    const total = Number(first.totalrecords)
+    const totalPages = Number.isFinite(total) && perPage > 0
+      ? Math.min(MAX_PAGES, Math.ceil(total / perPage))
+      : MAX_PAGES
+
+    const pageNumbers = []
+    for (let page = 2; page <= totalPages; page++) pageNumbers.push(page)
+
+    const pages = await Promise.all(pageNumbers.map(fetchOnePage))
+    for (const data of pages) collectFeatures(data, results)
   }
 
   const payload = {
